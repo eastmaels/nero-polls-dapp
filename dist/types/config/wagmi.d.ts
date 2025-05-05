@@ -19,6 +19,7 @@ export declare const config: import("wagmi").Config<[{
             readonly blockCreated: 14353601;
         };
     };
+    ensTlds?: readonly string[] | undefined;
     id: 1;
     name: "Ethereum";
     nativeCurrency: {
@@ -51,6 +52,7 @@ export declare const config: import("wagmi").Config<[{
             readonly blockCreated: 25770160;
         };
     };
+    ensTlds?: readonly string[] | undefined;
     id: 137;
     name: "Polygon";
     nativeCurrency: {
@@ -121,6 +123,7 @@ export declare const config: import("wagmi").Config<[{
             readonly address: "0x4200000000000000000000000000000000000016";
         };
     };
+    ensTlds?: readonly string[] | undefined;
     id: 10;
     name: "OP Mainnet";
     nativeCurrency: {
@@ -385,6 +388,7 @@ export declare const config: import("wagmi").Config<[{
             readonly blockCreated: 7654707;
         };
     };
+    ensTlds?: readonly string[] | undefined;
     id: 42161;
     name: "Arbitrum One";
     nativeCurrency: {
@@ -457,6 +461,7 @@ export declare const config: import("wagmi").Config<[{
             readonly address: "0x4200000000000000000000000000000000000016";
         };
     };
+    ensTlds?: readonly string[] | undefined;
     id: 8453;
     name: "Base";
     nativeCurrency: {
@@ -728,6 +733,7 @@ export declare const config: import("wagmi").Config<[{
             readonly blockCreated: 5317080;
         };
     };
+    ensTlds?: readonly string[] | undefined;
     id: 11155111;
     name: "Sepolia";
     nativeCurrency: {
