@@ -41,6 +41,14 @@ After installing the dependencies, start the development server with:
 yarn dev
 ```
 
+### 3. Deployment (vercel)
+
+```bash
+yarn build:demo
+vercel build --prod
+vercel --prebuilt --prod
+```
+
 ## 📚 Documentation
 
 For detailed information, please refer to the [official documentation](https://docs.nerochain.io/en).
