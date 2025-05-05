@@ -1,6 +1,7 @@
 {
   "name": "nero-polls-dapp",
   "homepage": "https://eastmaels.github.io/nero-polls-dapp/",
+  "type": "module",
   "version": "1.0.0",
   "packageManager": "yarn@3.8.7",
   "main": "./dist/app/bundle.js",
