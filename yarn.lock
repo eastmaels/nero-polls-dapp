@@ -9199,6 +9199,7 @@ __metadata:
     "@babel/runtime": ^7.27.1
     "@eslint/compat": ^1.2.0
     "@eth-optimism/contracts-ts": ^0.17.2
+    "@ethersproject/abi": ^5.8.0
     "@ethersproject/providers": ^5.8.0
     "@rainbow-me/rainbowkit": ^2.1.3
     "@storybook/react": 8.1.11
