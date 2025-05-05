@@ -8,7 +8,6 @@ import tsconfigPaths from 'vite-tsconfig-paths'
 
 const commonConfig = {
   plugins: [react(), tsconfigPaths(), nodePolyfills()],
-  base: "/nero-polls-dapp/",
   css: {
     postcss: {
       plugins: [tailwindcss(), autoprefixer()],
@@ -31,6 +30,7 @@ export default defineConfig(({ mode }) => {
     // デモ・テストページ用の設定
     return {
       ...commonConfig,
+      base: './',
       build: {
         outDir: 'dist/app',
         rollupOptions: {
