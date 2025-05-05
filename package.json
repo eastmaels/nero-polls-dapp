@@ -1,7 +1,7 @@
 {
   "name": "nero-wallet",
   "version": "0.0.0",
-  "packageManager": "yarn@3.8.7",
+  "packageManager": "yarn@1.22.22",
   "main": "./dist/app/bundle.js",
   "module": "./dist/app/bundle.js",
   "types": "./dist/types/index.d.ts",
@@ -95,10 +95,10 @@
     "*.{js,jsx,css,md,json,yml}": "prettier --write --config prettier.config.js"
   },
   "volta": {
-    "node": "22.4.1",
-    "yarn": "3.8.7"
+    "node": "20.x",
+    "yarn": "1.x"
   },
   "engines": {
-    "yarn": ">=3.0.0 <4.0.0"
+    "yarn": ">=1.x <4.x"
   }
 }
