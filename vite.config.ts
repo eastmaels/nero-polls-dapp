@@ -8,6 +8,7 @@ import tsconfigPaths from 'vite-tsconfig-paths'
 
 const commonConfig = {
   plugins: [react(), tsconfigPaths(), nodePolyfills()],
+  base: "/nero-polls-dapp/",
   css: {
     postcss: {
       plugins: [tailwindcss(), autoprefixer()],

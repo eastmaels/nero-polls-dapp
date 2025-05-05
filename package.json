@@ -1,6 +1,7 @@
 {
-  "name": "nero-wallet",
-  "version": "0.0.1",
+  "name": "nero-polls-dapp",
+  "homepage": "https://eastmaels.github.io/nero-polls-dapp/",
+  "version": "1.0.0",
   "packageManager": "yarn@3.8.7",
   "main": "./dist/app/bundle.js",
   "module": "./dist/app/bundle.js",
@@ -28,7 +29,9 @@
     "prepare": "husky",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predeploy": "yarn install && yarn build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "@account-abstraction/contracts": "0.6.0",
@@ -44,6 +47,7 @@
     "@web3auth/web3auth-wagmi-connector": "^7.0.0",
     "antd": "^5.24.9",
     "ethers": "5.7.2",
+    "gh-pages": "^6.3.0",
     "qrcode.react": "^3.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
