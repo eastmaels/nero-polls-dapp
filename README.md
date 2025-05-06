@@ -1,10 +1,8 @@
-![](./header.jpg)
-
 # 🚨 **BETA RELEASE** 🚨
 
 > **This is a beta version of NERO Wallet. Expect frequent updates and potential changes.**  
 
-# NERO Wallet
+# NERO Decentralized Polls
 
 [![Beta Version](https://img.shields.io/badge/version-beta-orange.svg)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)  
@@ -16,7 +14,7 @@ Follow the steps below for a quick and easy setup.
 ## 🔗 Demo
 
 Try out our demo site at:  
-[https://app.testnet.nerochain.io/](https://app.testnet.nerochain.io/)
+[https://nero-polls.vercel.app/](https://nero-polls.vercel.app/)
 
 ## 📋 Prerequisites
 
@@ -32,6 +30,8 @@ Run the following command in your terminal:
 ```bash
 yarn install
 ```
+
+If install fails, try to delete yarn.lock, the run `yarn install`.
 
 ### 2. Start the Server
 
@@ -49,14 +49,6 @@ vercel build --prod
 vercel --prebuilt --prod
 ```
 
-## 📚 Documentation
-
-For detailed information, please refer to the [official documentation](https://docs.nerochain.io/en).
-
 ## 📄 License
 
 This project is distributed under the [MIT License](LICENSE).
-
-## 💬 Contact
-
-For any technical questions, feel free to reach out on the `dev-hub` channel in [Nero Discord](https://discord.gg/nerochainofficial).
