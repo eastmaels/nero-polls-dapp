@@ -119,10 +119,10 @@ const HomePage = () => {
       return;
     }
 
-    if (!nftName || !nftImageUrl) {
-      alert('Please provide a name and image URL for your NFT');
-      return;
-    }
+    // if (!nftName || !nftImageUrl) {
+    //   alert('Please provide a name and image URL for your NFT');
+    //   return;
+    // }
 
     setIsLoading(true);
     setUserOpHash(null);
