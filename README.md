@@ -7,7 +7,7 @@
 [![Beta Version](https://img.shields.io/badge/version-beta-orange.svg)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)  
 
-NERO Wallet is a high-performance wallet that supports innovative blockchain applications.  
+NERO decentralized polls - where your opinion matters.  
 Follow the steps below for a quick and easy setup.
 
 
