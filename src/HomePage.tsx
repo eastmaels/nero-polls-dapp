@@ -12,6 +12,7 @@ import {
   DAppTransactionData,
 } from '@/types'
 import { executeDAppTransaction } from '@/helper/executeTransaction';
+import Dashboard from "./dashboard"
 
 // Import ABIs
 import CreateTokenFactory from '@/abis/ERC20/CreateTokenFactory.json';
@@ -29,7 +30,7 @@ const NERO_POLL_ABI = [
 const TOKEN_FACTORY_ADDRESS = '0x00ef47f5316A311870fe3F3431aA510C5c2c5a90';
 
 const HomePage = () => {
-  const [activeTab, setActiveTab] = useState('mint-nft');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const { AAaddress, isConnected, simpleAccountInstance } = useSignature();
   console.log('simpleAccountInstance:', simpleAccountInstance);
 
@@ -270,8 +271,14 @@ const HomePage = () => {
       {/* Tabs */}
       <div className="flex space-x-2 mb-6">
         <button
-          className={`px-4 py-2 rounded-md ${activeTab === 'mint-nft' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-          onClick={() => handleTabChange('mint-nft')}
+          className={`px-4 py-2 rounded-md ${activeTab === 'dashboard' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+          onClick={() => handleTabChange('dashboard')}
+        >
+          Dashboard
+        </button>
+        <button
+          className={`px-4 py-2 rounded-md ${activeTab === 'create-poll' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+          onClick={() => handleTabChange('create-poll')}
         >
           Create Poll
         </button>
@@ -287,173 +294,133 @@ const HomePage = () => {
       </div>
 
       {/* Tab Content */}
-      <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6">
-        {/* Mint NFT Form */}
-        {activeTab === 'mint-nft' && (
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Mint a New NFT</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Name</label>
-                <input
-                  type="text"
-                  value={nftName}
-                  onChange={(e) => setNftName(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="My Awesome NFT"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea
-                  value={nftDescription}
-                  onChange={(e) => setNftDescription(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="Description of my NFT"
-                  rows={3}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Image URL</label>
-                <input
-                  type="text"
-                  value={nftImageUrl}
-                  onChange={(e) => setNftImageUrl(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="https://example.com/image.png"
-                />
-              </div>
-              <button
-                onClick={handleMintNFT}
-                disabled={isLoading || !nftImageUrl}
-                className="w-full px-4 py-2 text-white font-medium rounded-md bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300"
-              >
-                {isLoading ? 'Processing...' : 'Mint NFT'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Mint Token Form */}
-        {activeTab === 'mint-token' && (
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Create a New Token</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Token Name</label>
-                <input
-                  type="text"
-                  value={tokenName}
-                  onChange={(e) => setTokenName(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="My Token"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Token Symbol</label>
-                <input
-                  type="text"
-                  value={tokenSymbol}
-                  onChange={(e) => setTokenSymbol(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="TKN"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Initial Supply</label>
-                <input
-                  type="text"
-                  value={tokenSupply}
-                  onChange={(e) => setTokenSupply(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="100000"
-                />
-              </div>
-              <button
-                onClick={handleMintToken}
-                disabled={isLoading || !tokenName || !tokenSymbol}
-                className="w-full px-4 py-2 text-white font-medium rounded-md bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300"
-              >
-                {isLoading ? 'Processing...' : 'Create Token'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* NFT Gallery */}
-        {activeTab === 'nft-gallery' && (
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Your NFT Gallery</h2>
-            <button
-              onClick={fetchPolls}
-              disabled={isLoading}
-              className="mb-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-300"
-            >
-              {isLoading ? 'Loading...' : 'Refresh Gallery'}
-            </button>
-            
-            <div className="grid grid-cols-1 gap-4 mt-4">
-              {isLoading ? (
-                <div className="text-center py-10">
-                  <p className="text-gray-500">Loading your NFTs...</p>
+      {activeTab === 'dashboard' ? (
+        <Dashboard AAaddress={AAaddress} handleTabChange={handleTabChange} />
+      )
+      :
+        <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6">
+          {/* Mint NFT Form */}
+          {/* Mint NFT Form */}
+          {activeTab === 'create-poll' && (
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Mint a New NFT</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Name</label>
+                  <input
+                    type="text"
+                    value={nftName}
+                    onChange={(e) => setNftName(e.target.value)}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="My Awesome NFT"
+                  />
                 </div>
-              ) : nfts.length > 0 ? (
-                nfts.map((nft, index) => (
-                  <div key={index} className="border rounded-md p-4 bg-gray-50">
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <div className="w-full sm:w-1/3">
-                        <img
-                          src={nft.tokenURI || 'https://via.placeholder.com/150'}
-                          alt={`NFT #${nft.tokenId}`}
-                          className="w-full aspect-square object-cover rounded-md"
-                        />
-                      </div>
-                      <div className="w-full sm:w-2/3 space-y-2">
-                        <h3 className="font-bold text-lg">{nft.name || `NFT #${nft.tokenId}`}</h3>
-                        <p className="text-sm text-gray-600">Token ID: {nft.tokenId}</p>
-                        <div className="mt-2">
-                          <a 
-                            href={nft.tokenURI} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-600 hover:underline"
-                          >
-                            View Original
-                          </a>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Description</label>
+                  <textarea
+                    value={nftDescription}
+                    onChange={(e) => setNftDescription(e.target.value)}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Description of my NFT"
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Image URL</label>
+                  <input
+                    type="text"
+                    value={nftImageUrl}
+                    onChange={(e) => setNftImageUrl(e.target.value)}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="https://example.com/image.png"
+                  />
+                </div>
+                <button
+                  onClick={handleMintNFT}
+                  disabled={isLoading || !nftImageUrl}
+                  className="w-full px-4 py-2 text-white font-medium rounded-md bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300"
+                >
+                  {isLoading ? 'Processing...' : 'Mint NFT'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* NFT Gallery */}
+          {activeTab === 'nft-gallery' && (
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Your NFT Gallery</h2>
+              <button
+                onClick={fetchPolls}
+                disabled={isLoading}
+                className="mb-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-300"
+              >
+                {isLoading ? 'Loading...' : 'Refresh Gallery'}
+              </button>
+              
+              <div className="grid grid-cols-1 gap-4 mt-4">
+                {isLoading ? (
+                  <div className="text-center py-10">
+                    <p className="text-gray-500">Loading your NFTs...</p>
+                  </div>
+                ) : nfts.length > 0 ? (
+                  nfts.map((nft, index) => (
+                    <div key={index} className="border rounded-md p-4 bg-gray-50">
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="w-full sm:w-1/3">
+                          <img
+                            src={nft.tokenURI || 'https://via.placeholder.com/150'}
+                            alt={`NFT #${nft.tokenId}`}
+                            className="w-full aspect-square object-cover rounded-md"
+                          />
+                        </div>
+                        <div className="w-full sm:w-2/3 space-y-2">
+                          <h3 className="font-bold text-lg">{nft.name || `NFT #${nft.tokenId}`}</h3>
+                          <p className="text-sm text-gray-600">Token ID: {nft.tokenId}</p>
+                          <div className="mt-2">
+                            <a 
+                              href={nft.tokenURI} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-600 hover:underline"
+                            >
+                              View Original
+                            </a>
+                          </div>
                         </div>
                       </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="text-center py-10 border rounded-md">
+                    <p className="text-gray-500 mb-4">No NFTs found. Mint some NFTs first!</p>
+                    <button
+                      onClick={() => handleTabChange('create-poll')}
+                      className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    >
+                      Mint Your First NFT
+                    </button>
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-10 border rounded-md">
-                  <p className="text-gray-500 mb-4">No NFTs found. Mint some NFTs first!</p>
-                  <button
-                    onClick={() => handleTabChange('mint-nft')}
-                    className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    Mint Your First NFT
-                  </button>
-                </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Transaction Status */}
+          {txStatus && (
+            <div className="mt-4 p-3 bg-gray-100 rounded-md">
+              <p className="text-sm font-medium">
+                Status: <span className={txStatus.includes('Success') ? 'text-green-600' : 'text-blue-600'}>{txStatus}</span>
+              </p>
+              {userOpHash && (
+                <p className="text-xs mt-1 break-all">
+                  <span className="font-medium">UserOpHash:</span> {userOpHash}
+                </p>
               )}
             </div>
-          </div>
-        )}
-
-        {/* Transaction Status */}
-        {txStatus && (
-          <div className="mt-4 p-3 bg-gray-100 rounded-md">
-            <p className="text-sm font-medium">
-              Status: <span className={txStatus.includes('Success') ? 'text-green-600' : 'text-blue-600'}>{txStatus}</span>
-            </p>
-            {userOpHash && (
-              <p className="text-xs mt-1 break-all">
-                <span className="font-medium">UserOpHash:</span> {userOpHash}
-              </p>
-            )}
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      }
     </div>
   );
 };
