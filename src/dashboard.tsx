@@ -8,15 +8,20 @@ import { Badge } from "@/components/ui_v2/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui_v2/avatar"
 import { PlusCircle, Clock, Users } from "lucide-react"
 
-export default function Dashboard({ AAaddress, handleTabChange }: { AAaddress: string, handleTabChange: (tab: string) => void }) {
+export default function Dashboard({ AAaddress, handleTabChange, polls }: { AAaddress: string, handleTabChange: (tab: string) => void, polls: any[] }) {
   const [activeTab, setActiveTab] = useState("active")
+
+  // Filter polls based on their status
+  const activePolls = polls.filter(poll => poll.isOpen)
+  const createdPolls = polls.filter(poll => poll.creator === AAaddress)
+  const votedPolls = polls.filter(poll => poll.voted) // Assuming there's a voted flag
+  
+  console.log(activePolls);
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">DecentralPoll</h1>
-          <p className="text-muted-foreground mt-1">Create and manage blockchain-based polls</p>
         </div>
 
         <div className="flex items-center gap-4">
@@ -43,6 +48,11 @@ export default function Dashboard({ AAaddress, handleTabChange }: { AAaddress: s
             {activePolls.map((poll) => (
               <PollCard key={poll.id} poll={poll} type="active" />
             ))}
+            {activePolls.length === 0 && (
+              <div className="col-span-3 text-center py-10">
+                <p className="text-gray-500">No active polls found</p>
+              </div>
+            )}
           </div>
         </TabsContent>
 
@@ -51,6 +61,14 @@ export default function Dashboard({ AAaddress, handleTabChange }: { AAaddress: s
             {createdPolls.map((poll) => (
               <PollCard key={poll.id} poll={poll} type="created" />
             ))}
+            {createdPolls.length === 0 && (
+              <div className="col-span-3 text-center py-10">
+                <p className="text-gray-500">You haven't created any polls yet</p>
+                <Button className="mt-4" onClick={() => handleTabChange('create-poll')}>
+                  Create Your First Poll
+                </Button>
+              </div>
+            )}
           </div>
         </TabsContent>
 
@@ -59,6 +77,11 @@ export default function Dashboard({ AAaddress, handleTabChange }: { AAaddress: s
             {votedPolls.map((poll) => (
               <PollCard key={poll.id} poll={poll} type="voted" />
             ))}
+            {votedPolls.length === 0 && (
+              <div className="col-span-3 text-center py-10">
+                <p className="text-gray-500">You haven't voted on any polls yet</p>
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>
@@ -66,41 +89,57 @@ export default function Dashboard({ AAaddress, handleTabChange }: { AAaddress: s
   )
 }
 
+function calculateTimeLeft(endTime: string | Date): string {
+  console.log('endTime:', endTime);
+  const endDate = new Date(endTime);
+  const now = new Date();
+  
+  // Convert the difference to days
+  const timeLeftMs = endDate.getTime() - now.getTime();
+  
+  if (timeLeftMs <= 0) {
+    return "Ended";
+  }
+
+  const days = Math.ceil(timeLeftMs / (1000 * 60 * 60 * 24));
+  return `${days} days left`;
+}
+
 function PollCard({ poll, type }) {
   return (
     <Card className="overflow-hidden">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-lg font-bold">{poll.title}</CardTitle>
-          <StatusBadge status={poll.status} />
+          <CardTitle className="text-lg font-bold">{poll.subject || poll.title || poll.question}</CardTitle>
+          <StatusBadge status={poll.isOpen ? "active" : "ended"} />
         </div>
         <CardDescription className="line-clamp-2">{poll.description}</CardDescription>
       </CardHeader>
       <CardContent className="pb-2">
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
           <Clock className="h-4 w-4" />
-          <span>{poll.timeLeft}</span>
+          <span>{poll.endTime ? calculateTimeLeft(poll.endTime) : `${poll.duration} days`}</span>
           <span className="mx-1">•</span>
           <Users className="h-4 w-4" />
-          <span>{poll.votes} votes</span>
+          <span>{poll.totalResponses} / {poll.maxResponses} votes</span>
         </div>
 
         <div className="space-y-2">
-          {poll.options.slice(0, 3).map((option, index) => (
+          {(poll.options || []).slice(0, 3).map((option, index) => (
             <div key={index} className="relative pt-1">
               <div className="flex justify-between items-center mb-1">
-                <span className="text-xs font-medium text-muted-foreground">{option.text}</span>
-                <span className="text-xs font-medium text-muted-foreground">{option.percentage}%</span>
+                <span className="text-xs font-medium text-muted-foreground">{typeof option === 'string' ? option : option.text}</span>
+                <span className="text-xs font-medium text-muted-foreground">{typeof option === 'string' ? '0' : option.percentage}%</span>
               </div>
               <div className="overflow-hidden h-2 text-xs flex rounded bg-gray-200 dark:bg-gray-700">
                 <div
-                  style={{ width: `${option.percentage}%` }}
+                  style={{ width: `${typeof option === 'string' ? 0 : option.percentage}%` }}
                   className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary"
                 ></div>
               </div>
             </div>
           ))}
-          {poll.options.length > 3 && (
+          {(poll.options || []).length > 3 && (
             <div className="text-xs text-center text-muted-foreground mt-1">
               +{poll.options.length - 3} more options
             </div>
@@ -115,7 +154,7 @@ function PollCard({ poll, type }) {
           </Avatar>
           <span className="text-xs text-muted-foreground">{poll.creator}</span>
         </div>
-        <Button variant={type === "voted" ? "outline" : "default"} size="sm">
+        <Button variant={type === "voted" ? "outline" : "default"} size="sm" className="text-white">
           {type === "active" && "Vote"}
           {type === "created" && "Manage"}
           {type === "voted" && "Results"}

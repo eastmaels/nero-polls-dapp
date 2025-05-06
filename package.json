@@ -1,6 +1,6 @@
 {
-  "name": "nero-polls",
-  "homepage": "https://eastmaels.github.io/nero-polls-dapp/",
+  "name": "dpolls",
+  "homepage": "https://dpolls.github.io/",
   "type": "module",
   "version": "1.0.0",
   "packageManager": "yarn@3.8.7",
