@@ -6,7 +6,6 @@
 
 [![Beta Version](https://img.shields.io/badge/version-beta-orange.svg)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)  
-[![Discord](https://img.shields.io/discord/your-discord-id-here?label=Discord)](https://discord.gg/nerochainofficial)
 
 NERO Wallet is a high-performance wallet that supports innovative blockchain applications.  
 Follow the steps below for a quick and easy setup.
