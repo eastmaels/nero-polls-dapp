@@ -11,10 +11,46 @@
 NERO Wallet is a high-performance wallet that supports innovative blockchain applications.  
 Follow the steps below for a quick and easy setup.
 
-## 🔗 Demo
+
+* [Roadmap](#roadmap)
+* [Demo](#demo)
+
+## Roadmap
+
+```mermaid
+%% Roadmap Timeline (Gantt Chart)
+gantt
+    title SMART dPolls Roadmap
+    dateFormat  YYYY-MM-DD
+    axisFormat %b %d
+
+    section Waves
+    Wave 1 (Ideathon)          :a1, 2024-04-14, 14d
+    Wave 2 (Foundation)        :a2, after a1, 14d
+    Wave 3 (Core Features)     :a3, after a2, 14d
+    Wave 4 (Enhancements)      :a4, after a3, 14d
+    Wave 5 (Security & Control):a5, after a4, 14d
+    Wave 6 (Polishing)         :a6, after a5, 14d
+    Ending Ceremony            :milestone, 2024-07-13, 0d
+
+    section Features
+    Frontend Landing Page     :b1, 2024-04-28, 14d
+    Poll Smart Contract v2.0  :b2, 2024-04-28, 14d
+    Creating Polls            :b3, 2024-04-28, 14d
+    Poll Smart Contract v3.0  :b4, 2024-05-12, 14d
+    Submitting Responses      :b5, 2024-05-12, 14d
+    Viewing Results           :b6, 2024-05-12, 14d
+    Claiming Rewards          :b7, 2024-05-12, 14d
+    Modifying Polls           :b8, 2024-05-12, 14d
+    Poll Smart Contract v4.0  :b9, 2024-05-26, 14d
+    TBD                       :b10, 2024-06-09, 14d
+    TBD                       :b11, 2024-06-23, 14d
+```
+
+## Demo
 
 Try out our demo site at:  
-[https://nero-polls.vercel.app/](https://nero-polls.vercel.app/)
+[https://dpolls.vercel.app/](https://dpolls.vercel.app/)
 
 ## 📋 Prerequisites
 
