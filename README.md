@@ -1,6 +1,6 @@
 # 🚨 **BETA RELEASE** 🚨
 
-> **This is a beta version of NERO Wallet. Expect frequent updates and potential changes.**  
+> **This is a beta version. Expect frequent updates and potential changes.**  
 
 # NERO Decentralized Polls
 
