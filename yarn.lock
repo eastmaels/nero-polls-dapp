@@ -9014,9 +9014,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nero-polls-dapp@workspace:.":
+"nero-polls@workspace:.":
   version: 0.0.0-use.local
-  resolution: "nero-polls-dapp@workspace:."
+  resolution: "nero-polls@workspace:."
   dependencies:
     "@account-abstraction/contracts": 0.6.0
     "@babel/runtime": ^7.27.1
