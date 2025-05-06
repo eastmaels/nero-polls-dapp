@@ -1,26 +1,36 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Switch } from "@/components/ui/switch"
-import { Separator } from "@/components/ui/separator"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { useNavigate } from "react-router-dom"
+import { Button } from "@/components/ui_v2/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui_v2/card"
+import { Input } from "@/components/ui_v2/input"
+import { Textarea } from "@/components/ui_v2/textarea"
+import { Label } from "@/components/ui_v2/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui_v2/radio-group"
+import { Switch } from "@/components/ui_v2/switch"
+import { Separator } from "@/components/ui_v2/separator"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui_v2/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui_v2/tabs"
+import { Calendar } from "@/components/ui_v2/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui_v2/popover"
 import { format } from "date-fns"
 import { CalendarIcon, Trash2, PlusCircle, ArrowLeft, Info, Lock, Globe, Users2 } from "lucide-react"
 
-export default function CreatePoll() {
-  const router = useRouter()
-  const [date, setDate] = useState(null)
-  const [options, setOptions] = useState([
+interface CreatePollProps {
+  handleCreatePoll: () => Promise<void>;
+  handleTabChange: (tab: string) => void;
+}
+
+interface PollOption {
+  id: number;
+  text: string;
+}
+
+export default function CreatePoll({ handleCreatePoll, handleTabChange }: CreatePollProps) {
+  const navigate = useNavigate()
+  const [date, setDate] = useState<Date | undefined>(undefined)
+  const [options, setOptions] = useState<PollOption[]>([
     { id: 1, text: "" },
     { id: 2, text: "" },
   ])
@@ -31,12 +41,12 @@ export default function CreatePoll() {
     setOptions([...options, { id: newId, text: "" }])
   }
 
-  const removeOption = (id) => {
+  const removeOption = (id: number) => {
     if (options.length <= 2) return
     setOptions(options.filter((option) => option.id !== id))
   }
 
-  const updateOption = (id, text) => {
+  const updateOption = (id: number, text: string) => {
     setOptions(options.map((option) => (option.id === id ? { ...option, text } : option)))
   }
 
@@ -45,19 +55,12 @@ export default function CreatePoll() {
     // Simulate blockchain transaction
     setTimeout(() => {
       setIsCreating(false)
-      router.push("/dashboard")
+      navigate("/dashboard")
     }, 2000)
   }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
-      <Button variant="ghost" className="mb-6 gap-2" onClick={() => router.push("/dashboard")}>
-        <ArrowLeft className="h-4 w-4" />
-        Back to Dashboard
-      </Button>
-
-      <h1 className="text-3xl font-bold tracking-tight mb-6">Create New Poll</h1>
-
       <Tabs defaultValue="basic" className="w-full">
         <TabsList className="grid grid-cols-3 w-full mb-8">
           <TabsTrigger value="basic">Basic Info</TabsTrigger>
@@ -112,13 +115,18 @@ export default function CreatePoll() {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
-                    <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
+                    <Calendar 
+                      mode="single" 
+                      selected={date} 
+                      onSelect={(newDate: Date | undefined) => setDate(newDate)}
+                      initialFocus 
+                    />
                   </PopoverContent>
                 </Popover>
               </div>
             </CardContent>
             <CardFooter className="flex justify-between">
-              <Button variant="ghost" onClick={() => router.push("/dashboard")}>
+              <Button variant="ghost" onClick={() => navigate("/dashboard")}>
                 Cancel
               </Button>
               <Button>Continue to Options</Button>

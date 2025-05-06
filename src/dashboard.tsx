@@ -64,7 +64,7 @@ export default function Dashboard({ AAaddress, handleTabChange, polls }: { AAadd
             {createdPolls.length === 0 && (
               <div className="col-span-3 text-center py-10">
                 <p className="text-gray-500">You haven't created any polls yet</p>
-                <Button className="mt-4" onClick={() => handleTabChange('create-poll')}>
+                <Button className="mt-4 text-white" onClick={() => handleTabChange('create-poll')}>
                   Create Your First Poll
                 </Button>
               </div>

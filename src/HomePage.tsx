@@ -13,7 +13,7 @@ import {
 } from '@/types'
 import { executeDAppTransaction } from '@/helper/executeTransaction';
 import Dashboard from "./dashboard"
-
+import CreatePoll from "./create-poll"
 // Import ABIs
 import CreateTokenFactory from '@/abis/ERC20/CreateTokenFactory.json';
 
@@ -324,70 +324,17 @@ const HomePage = () => {
         >
           Create Poll
         </button>
-        <button
-          className={`px-4 py-2 rounded-md ${activeTab === 'nft-gallery' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-          onClick={() => {
-            handleTabChange('nft-gallery');
-            fetchPolls();
-          }}
-        >
-          Polls
-        </button>
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'dashboard' ? (
+      {activeTab === 'dashboard' && (
         <Dashboard AAaddress={AAaddress} handleTabChange={handleTabChange} polls={polls} />
-      )
-      :
+      )}
+      {activeTab === 'create-poll' && (
+        <CreatePoll handleCreatePoll={handleCreatePoll} handleTabChange={handleTabChange}/>
+      )}
+      {(activeTab !== 'create-poll' && activeTab !== 'dashboard') && (
         <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6">
-          {/* Mint NFT Form */}
-          {/* Mint NFT Form */}
-          {activeTab === 'create-poll' && (
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Mint a New NFT</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
-                  <input
-                    type="text"
-                    value={nftName}
-                    onChange={(e) => setNftName(e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    placeholder="My Awesome NFT"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Description</label>
-                  <textarea
-                    value={nftDescription}
-                    onChange={(e) => setNftDescription(e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    placeholder="Description of my NFT"
-                    rows={3}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Image URL</label>
-                  <input
-                    type="text"
-                    value={nftImageUrl}
-                    onChange={(e) => setNftImageUrl(e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    placeholder="https://example.com/image.png"
-                  />
-                </div>
-                <button
-                  onClick={handleCreatePoll}
-                  disabled={isLoading || !nftImageUrl}
-                  className="w-full px-4 py-2 text-white font-medium rounded-md bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300"
-                >
-                  {isLoading ? 'Processing...' : 'Create Poll'}
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* NFT Gallery */}
           {activeTab === 'nft-gallery' && (
             <div>
@@ -452,7 +399,7 @@ const HomePage = () => {
             </div>
           )}
         </div>
-      }
+      )}
     </div>
   );
 };
