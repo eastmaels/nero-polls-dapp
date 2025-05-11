@@ -1,21 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Label } from "@/components/ui_v2/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui_v2/radio-group"
-import { Switch } from "@/components/ui_v2/switch"
-import { Separator } from "@/components/ui_v2/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui_v2/tabs"
-import { CalendarIcon, Trash2, PlusCircle, ArrowLeft, Info, Lock, Globe, Users2 } from "lucide-react"
-import { DatePicker } from "antd";
-import { Button, Form, Input, Radio, Card } from 'antd';
+import { Trash2, PlusCircle, } from "lucide-react"
+import { DatePicker, DatePickerProps } from "antd";
+import { Button, Form, Input, Radio, Card, Space } from 'antd';
 import { message, Steps, theme } from 'antd';
+import { Field } from "react-hook-form";
 
 type LayoutType = Parameters<typeof Form>[0]['layout'];
 
 interface CreatePollProps {
-  handleCreatePoll: () => Promise<void>;
+  handleCreatePoll: (pollData: any) => Promise<void>;
   handleTabChange: (tab: string) => void;
 }
 
@@ -24,112 +20,256 @@ interface PollOption {
   text: string;
 }
 
+interface FormValues {
+  basicInfo: {
+    subject: string;
+    description: string;
+    endDate: any;
+  };
+  options: PollOption[];
+  settings: {
+    rewardPerResponse: number;
+    maxResponses: number;
+    durationDays: number;
+    minContribution: number;
+    targetFund: number;
+  };
+}
+
 const onChange: DatePickerProps['onChange'] = (date, dateString) => {
   console.log(date, dateString);
 };
 
 export default function CreatePoll({ handleCreatePoll, handleTabChange }: CreatePollProps) {
-
   const [form] = Form.useForm();
-  const [formLayout, setFormLayout] = useState<LayoutType>('horizontal');
-
-  const steps = [
-    {
-      title: 'Basic Info',
-      content: 
-        <Card>
-          <Form
-            layout={formLayout}
-            form={form}
-            initialValues={{ layout: formLayout }}
-            style={{ maxWidth: formLayout === 'inline' ? 'none' : 600 }}
-          >
-            <Form.Item label="Field A">
-              <Input placeholder="input placeholder" />
-            </Form.Item>
-            <Form.Item label="Field B">
-              <Input placeholder="input placeholder" />
-            </Form.Item>
-            <Form.Item label="End Date">
-              <DatePicker
-                onChange={onChange}
-                picker="date"
-                format="YYYY-MM-DD"
-              />
-            </Form.Item>
-          </Form>
-        </Card>
-    },
-    {
-      title: 'Options',
-      content: 'options',
-    },
-    {
-      title: 'Settings',
-      content: 'settings',
-    },
-  ];
-
-
   const navigate = useNavigate()
-  const [date, setDate] = useState<Date | undefined>(undefined)
   const [options, setOptions] = useState<PollOption[]>([
     { id: 1, text: "" },
     { id: 2, text: "" },
-  ])
-  const [isCreating, setIsCreating] = useState(false)
+  ]);
+  const [optionValues, setOptionValues] = useState<string[]>([
+    "",
+    "",
+  ]);
+
+  const [current, setCurrent] = useState(0);
+  const steps = [
+    { title: 'Basic Info' },
+    { title: 'Options' },
+    { title: 'Settings'}
+  ];
 
   const addOption = () => {
-    const newId = options.length > 0 ? Math.max(...options.map((o) => o.id)) + 1 : 1
-    setOptions([...options, { id: newId, text: "" }])
+    const newId = options.length > 0 ? Math.max(...options.map((o: PollOption) => o.id)) + 1 : 1
+    //setOptions([...options, { id: newId, text: "" }])
   }
 
   const removeOption = (id: number) => {
     if (options.length <= 2) return
-    setOptions(options.filter((option) => option.id !== id))
+    //setOptions(options.filter((option) => option.id !== id))
   }
 
   const updateOption = (id: number, text: string) => {
-    setOptions(options.map((option) => (option.id === id ? { ...option, text } : option)))
+    debugger;
+    setOptionValues(options.map((option, index) => (index === id ? text : option.text)))
+    console.log("updateOption optionValues", optionValues);
   }
 
-  const handleCreate = () => {
-    setIsCreating(true)
-    // Simulate blockchain transaction
-    setTimeout(() => {
-      setIsCreating(false)
-      navigate("/dashboard")
-    }, 2000)
-  }
-
-  const { token } = theme.useToken();
-  const [current, setCurrent] = useState(0);
-
-  const next = () => {
+  const next = async () => {
+    const fieldsValue = form.getFieldsValue(true);
+    console.log("next fieldsValue", fieldsValue);
     setCurrent(current + 1);
   };
 
-  const prev = () => {
+  const prev = async () => {
+    const fieldsValue = form.getFieldsValue(true);
+    console.log("prev fieldsValue", fieldsValue);
     setCurrent(current - 1);
   };
 
-  const items = steps.map((item) => ({ key: item.title, title: item.title }));
+  const handleSubmit = async () => {
+    try {
+      await form.validateFields();
+      const fieldsValue = form.getFieldsValue(true);
+      console.log('fieldsValue:', fieldsValue);
 
-  const contentStyle: React.CSSProperties = {
-    lineHeight: '260px',
-    textAlign: 'center',
-    color: token.colorTextTertiary,
-    backgroundColor: token.colorFillAlter,
-    borderRadius: token.borderRadiusLG,
-    border: `1px dashed ${token.colorBorder}`,
-    marginTop: 16,
+      // Calculate duration in days
+      const endDate = fieldsValue.endDate?.toDate();
+      console.log('endDate:', endDate);
+      const currentDate = new Date();
+      const durationInMs = endDate.getTime() - currentDate.getTime();
+      const durationInDays = Math.ceil(durationInMs / (1000 * 60 * 60 * 24));
+
+      const pollData = {
+        ...fieldsValue,
+        options: fieldsValue.options.map((item: any) => item.text),
+        endDate: endDate,
+        duration: durationInDays // Add the calculated duration
+      };
+
+      console.log('Submitting poll data:', pollData);
+      await handleCreatePoll(pollData);
+      handleTabChange("dashboard");
+    } catch (error) {
+      console.error('Validation failed:', error);
+    }
   };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
-      <>
-        <Steps current={current} items={items} />
-        <div style={contentStyle}>{steps[current].content}</div>
+      <Form
+        layout={"horizontal"}
+        form={form}
+        name="basicInfo"
+        style={{ maxWidth: 600, margin: '0 auto' }}
+      >
+
+        <Steps
+          current={current}
+          percent={current / (steps.length - 1) * 100}
+          items={steps}
+        />
+        {/* <div style={contentStyle}>{stepItems[current].content}</div> */}
+        <Card
+          style={current == 0 ? {} : { display: "none" }}
+        >
+          <Form.Item 
+            label="Subject"
+            name="subject"
+            rules={[{ required: true, message: 'Please enter a subject' }]}
+            style={{ textAlign: 'center' }}
+          >
+            <Input placeholder="Subject" />
+          </Form.Item>
+          <Form.Item 
+            label="Description"
+            name="description"
+            rules={[{ required: true, message: 'Please enter a description' }]}
+            style={{ textAlign: 'center' }}
+          >
+            <Input placeholder="Enter poll description" />
+          </Form.Item>
+          <Form.Item 
+            label="End Date"
+            name="endDate"
+            rules={[{ required: true, message: 'Please select an end date' }]}
+            style={{ textAlign: 'center' }}
+          >
+            <DatePicker
+              onChange={onChange}
+              picker="date"
+              format="YYYY-MM-DD"
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
+        </Card>
+
+        {/* Options */}
+        <Card
+          // className={`steps-content ${current == 1 ? "" : "hidden"}`}
+          style={current == 1 ? {} : { display: "none" }}
+        >
+          <Form.List
+            name="options"
+            initialValue={options}
+          >
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map(({ key, name }) => (
+                  <Form.Item
+                    key={key}
+                    label={`Option ${name + 1}`}
+                    style={{ textAlign: 'center' }}
+                    name={[name, "text"]}
+                  >
+                    <Space.Compact style={{ width: '100%', justifyContent: 'center' }}>
+                      <Input
+                        placeholder={`Enter option ${name + 1}`} 
+                        //onChange={(e) => updateOption(key, e.target.value)}
+                        // value={optionValues[key]}
+                      />
+                      {fields.length > 2 && (
+                        <Button 
+                          type="text" 
+                          danger 
+                          icon={<Trash2 size={16} />}
+                          onClick={() => remove(name)}
+                        />
+                      )}
+                    </Space.Compact>
+                  </Form.Item>
+                ))}
+                <Form.Item style={{ textAlign: 'center' }}>
+                  <Button 
+                    type="dashed" 
+                    onClick={() => add({ text: "" })} 
+                    block 
+                    icon={<PlusCircle size={16} />}
+                  >
+                    Add Option
+                  </Button>
+                </Form.Item>
+              </>
+            )}
+          </Form.List>
+        </Card>
+
+        {/* Settings */}
+        <Card
+          style={current == 2 ? {} : { display: "none" }}
+        >
+          <Form.Item 
+            label="Reward per Response"
+            name="rewardPerResponse"
+            rules={[
+              { required: true, message: 'Please enter reward amount' },
+            ]}
+            style={{ textAlign: 'center' }}
+          >
+            <Input type="number" placeholder="Enter reward amount" />
+          </Form.Item>
+          <Form.Item 
+            label="Max Responses"
+            name="maxResponses"
+            rules={[
+              { required: true, message: 'Please enter max responses' },
+            ]}
+            style={{ textAlign: 'center' }}
+          >
+            <Input type="number" placeholder="Enter maximum number of responses" />
+          </Form.Item>
+          <Form.Item 
+            label="Duration (Days)"
+            name="durationDays"
+            rules={[
+              { required: true, message: 'Please enter duration' },
+            ]}
+            style={{ textAlign: 'center' }}
+          >
+            <Input type="number" placeholder="Enter poll duration in days" />
+          </Form.Item>
+          <Form.Item 
+            label="Min Contribution"
+            name="minContribution"
+            rules={[
+              { required: true, message: 'Please enter minimum contribution' },
+            ]}
+            style={{ textAlign: 'center' }}
+          >
+            <Input type="number" placeholder="Enter minimum contribution amount" />
+          </Form.Item>
+          <Form.Item 
+            label="Target Fund"
+            name="targetFund"
+            rules={[
+              { required: true, message: 'Please enter target fund' },
+            ]}
+            style={{ textAlign: 'center' }}
+          >
+            <Input type="number" placeholder="Enter target fund amount" />
+          </Form.Item>
+        </Card>
+
         <div style={{ marginTop: 24 }}>
           {current > 0 && (
             <Button style={{ margin: '0 8px' }} onClick={() => prev()}>
@@ -142,12 +282,12 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
             </Button>
           )}
           {current === steps.length - 1 && (
-            <Button type="primary" onClick={() => handleCreatePoll()}>
-              Done
+            <Button type="primary" onClick={handleSubmit}>
+              Submit
             </Button>
           )}
         </div>
-      </>
+      </Form>
     </div>
   )
 }
