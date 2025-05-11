@@ -32,7 +32,6 @@ const TOKEN_FACTORY_ADDRESS = '0x00ef47f5316A311870fe3F3431aA510C5c2c5a90';
 const HomePage = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { AAaddress, isConnected, simpleAccountInstance } = useSignature();
-  console.log('simpleAccountInstance:', simpleAccountInstance);
 
   const client = useContext(ClientContext);
   const signer = useEthersSigner()
@@ -73,47 +72,7 @@ const HomePage = () => {
     }
   };
 
-  // Mint ERC20 token
-  const handleMintToken = async () => {
-    if (!isConnected) {
-      alert('Please connect your wallet first');
-      return;
-    }
-
-    setIsLoading(true);
-    setUserOpHash(null);
-    setTxStatus('');
-
-    try {
-
-      // Call the createToken function on the token factory contract
-      await execute({
-        function: 'createToken',
-        contractAddress: TOKEN_FACTORY_ADDRESS,
-        abi: CreateTokenFactory.abi,
-        params: [tokenName, tokenSymbol, tokenSupply],
-        value: 0,
-      });
-
-      const result = await waitForUserOpResult();
-      setUserOpHash(result.userOpHash);
-      setIsPolling(true);
-
-      if (result.result === true) {
-        setTxStatus('Success!');
-        setIsPolling(false);
-      } else if (result.transactionHash) {
-        setTxStatus('Transaction hash: ' + result.transactionHash);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      setTxStatus('An error occurred');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCreatePoll = async () => {
+  const handleCreatePoll = async (pollForm: any) => {
     if (!isConnected) {
       alert('Please connect your wallet first');
       return;
@@ -129,17 +88,17 @@ const HomePage = () => {
     setTxStatus('');
 
     try {
-      const pollForm = {
-        subject: 'Sample Poll',
-        description: "Sample description",
-        options: ['Option 1', 'Option 2', 'Option 3'],
-        rewardPerResponse: ethers.utils.parseEther('0.1'),
-        duration: 10, // days
-        maxResponses: 10,
-        minContribution: ethers.utils.parseEther('1').toString(),
-        targetFund: ethers.utils.parseEther('10').toString(),
-      }
-      console.log('pollForm:', pollForm);
+      // const pollForm = {
+      //   subject: 'Sample Poll',
+      //   description: "Sample description",
+      //   options: ['Option 1', 'Option 2', 'Option 3'],
+      //   rewardPerResponse: '0.1',
+      //   duration: "10", // days
+      //   maxResponses: "10",
+      //   minContribution: '1',
+      //   targetFund: '10',
+      // }
+      console.log('pollForm2', pollForm);
 
       //*
       await execute({
@@ -150,11 +109,11 @@ const HomePage = () => {
           pollForm.subject,
           pollForm.description,
           pollForm.options,
-          pollForm.rewardPerResponse,
-          pollForm.duration,
-          pollForm.maxResponses,
-          pollForm.minContribution,
-          pollForm.targetFund,
+          ethers.utils.parseEther(pollForm.rewardPerResponse).toString(),
+          parseInt(pollForm.duration),
+          parseInt(pollForm.maxResponses),
+          ethers.utils.parseEther(pollForm.minContribution).toString(),
+          ethers.utils.parseEther(pollForm.targetFund).toString(),
         ],
         value: 0,
       });

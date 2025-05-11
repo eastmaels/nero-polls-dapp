@@ -21,6 +21,8 @@ export const ERC20_ABI_DPOLLS = [
   'function closePoll(uint256 pollId) external',
   'function cancelPoll(uint256 pollId) external',
   'function openPoll(uint256 pollId) external',
+  'function updateTargetFund(uint256 pollId, uint256 newTargetFund) external payable',
+  'function fundPoll(uint256 pollId) external payable',
   
   // View Functions
   'function pollCounter() view returns (uint256)',

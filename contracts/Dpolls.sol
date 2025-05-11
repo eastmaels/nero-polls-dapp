@@ -208,12 +208,12 @@ contract PollsDApp {
         Poll storage p = polls[pollId];
 
         // Create array of active polls
-        string[] responses = new string[](p.responses.length);
+        string[] memory responses = new string[](p.responses.length);
         uint256 currentIndex = 0;
         
         // Fill array with active polls
         for (uint256 i = 0; i < pollIds.length; i++) {
-            responses[currentIndex] = p.responses[current].response;
+            responses[currentIndex] = p.responses[currentIndex].response;
             currentIndex++;
         }
 
