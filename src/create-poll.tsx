@@ -42,14 +42,10 @@ const onChange: DatePickerProps['onChange'] = (date, dateString) => {
 
 export default function CreatePoll({ handleCreatePoll, handleTabChange }: CreatePollProps) {
   const [form] = Form.useForm();
-  const navigate = useNavigate()
+  const [loading, setLoading] = useState(false);
   const [options, setOptions] = useState<PollOption[]>([
     { id: 1, text: "" },
     { id: 2, text: "" },
-  ]);
-  const [optionValues, setOptionValues] = useState<string[]>([
-    "",
-    "",
   ]);
 
   const [current, setCurrent] = useState(0);
@@ -58,22 +54,6 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
     { title: 'Options' },
     { title: 'Settings'}
   ];
-
-  const addOption = () => {
-    const newId = options.length > 0 ? Math.max(...options.map((o: PollOption) => o.id)) + 1 : 1
-    //setOptions([...options, { id: newId, text: "" }])
-  }
-
-  const removeOption = (id: number) => {
-    if (options.length <= 2) return
-    //setOptions(options.filter((option) => option.id !== id))
-  }
-
-  const updateOption = (id: number, text: string) => {
-    debugger;
-    setOptionValues(options.map((option, index) => (index === id ? text : option.text)))
-    console.log("updateOption optionValues", optionValues);
-  }
 
   const next = async () => {
     const fieldsValue = form.getFieldsValue(true);
@@ -88,6 +68,7 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
   };
 
   const handleSubmit = async () => {
+    setLoading(true);
     try {
       await form.validateFields();
       const fieldsValue = form.getFieldsValue(true);
@@ -112,6 +93,8 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
       handleTabChange("dashboard");
     } catch (error) {
       console.error('Validation failed:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -185,8 +168,6 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
                     <Space.Compact style={{ width: '100%', justifyContent: 'center' }}>
                       <Input
                         placeholder={`Enter option ${name + 1}`} 
-                        //onChange={(e) => updateOption(key, e.target.value)}
-                        // value={optionValues[key]}
                       />
                       {fields.length > 2 && (
                         <Button 
@@ -282,7 +263,11 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
             </Button>
           )}
           {current === steps.length - 1 && (
-            <Button type="primary" onClick={handleSubmit}>
+            <Button
+            type="primary"
+            onClick={handleSubmit}
+            loading={loading}
+            >
               Submit
             </Button>
           )}
