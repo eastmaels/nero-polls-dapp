@@ -1,14 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui_v2/button"
+//import { Button } from "@/components/ui_v2/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui_v2/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui_v2/tabs"
 import { Badge } from "@/components/ui_v2/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui_v2/avatar"
 import { PlusCircle, Clock, Users } from "lucide-react"
+import { Button, Modal, Space } from 'antd';
 
-export default function Dashboard({ AAaddress, handleTabChange, polls }: { AAaddress: string, handleTabChange: (tab: string) => void, polls: any[] }) {
+export default function Dashboard({ AAaddress, handleTabChange, polls, handleVote }: { AAaddress: string, handleTabChange: (tab: string) => void, polls: any[], handleVote: (pollId: number, option: string) => void }) {
   const [activeTab, setActiveTab] = useState("active")
 
   // Filter polls based on their status
@@ -46,7 +47,7 @@ export default function Dashboard({ AAaddress, handleTabChange, polls }: { AAadd
         <TabsContent value="active" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {activePolls.map((poll) => (
-              <PollCard key={poll.id} poll={poll} type="active" />
+              <PollCard key={poll.id} poll={poll} type="active" handleVote={handleVote} />
             ))}
             {activePolls.length === 0 && (
               <div className="col-span-3 text-center py-10">
@@ -105,7 +106,38 @@ function calculateTimeLeft(endTime: string | Date): string {
   return `${days} days left`;
 }
 
-function PollCard({ poll, type }) {
+
+function PollCard({ poll, type, handleVote }: { poll: any, type: string, handleVote: (pollId: number, option: string) => void }) {
+  console.log(poll);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const getRandomPercentage = () => {
+    return Math.floor(Math.random() * 100);
+  }
+  
+  const showModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleOptionVote = async (option) => {
+    console.log(option);
+    setIsLoading(true);
+    try {
+      const result = await handleVote(poll.id, option);
+      console.log(result);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setIsLoading(false);
+      setIsModalOpen(false);
+    }
+  };
+
+  const modOptions = poll.options.map((option) => {
+    return { text: option, percentage: getRandomPercentage()};
+  });
+  console.log(modOptions);
+
   return (
     <Card className="overflow-hidden">
       <CardHeader className="pb-3">
@@ -154,12 +186,31 @@ function PollCard({ poll, type }) {
           </Avatar>
           <span className="text-xs text-muted-foreground">{poll.creator}</span>
         </div>
-        <Button variant={type === "voted" ? "outline" : "default"} size="sm" className="text-white">
+        <Button
+          // variant={type === "voted" ? "outline" : "default"} size="sm" className="text-white"
+          onClick={showModal}
+        >
           {type === "active" && "Vote"}
           {type === "created" && "Manage"}
-          {type === "voted" && "Results"}
         </Button>
       </CardFooter>
+      <Modal
+        title={poll.subject || poll.title || poll.question}
+        closable={{ 'aria-label': 'Custom Close Button' }}
+        open={isModalOpen}
+        footer={[]}
+      >
+        <Space direction="vertical" size="middle">
+        {modOptions.map((option, index) => (
+          <Button
+            key={index} block onClick={() => handleOptionVote(option)}
+            loading={isLoading}
+          >
+            {option.text}
+          </Button>
+        ))}
+        </Space>
+      </Modal>
     </Card>
   )
 }

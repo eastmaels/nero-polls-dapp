@@ -144,6 +144,29 @@ const HomePage = () => {
     }
   };
 
+  const handleVote = async (pollId: number, option: string) => {
+    console.log(`${pollId} ${option}`);
+    if (!isConnected) {
+      alert('Please connect your wallet first');
+      return;
+    }
+
+    // TODO: Implement vote function
+    // try {
+    //   await execute({
+    //     function: 'vote',
+    //     contractAddress: CONTRACT_ADDRESSES.dpollsContract,
+    //     abi: NERO_POLL_ABI,
+    //     params: [pollId, option],
+    //     value: 0,
+    //   });
+    // } catch (error) {
+    //   console.error('Error:', error);
+    //   setTxStatus('An error occurred');
+    // }
+  }
+
+
   const fetchPolls = async () => {
     if (!isConnected || !AAaddress) return;
 
@@ -287,7 +310,12 @@ const HomePage = () => {
 
       {/* Tab Content */}
       {activeTab === 'dashboard' && (
-        <Dashboard AAaddress={AAaddress} handleTabChange={handleTabChange} polls={polls} />
+        <Dashboard
+          AAaddress={AAaddress}
+          handleTabChange={handleTabChange}
+          polls={polls} 
+          handleVote={handleVote}
+        />
       )}
       {activeTab === 'create-poll' && (
         <CreatePoll handleCreatePoll={handleCreatePoll} handleTabChange={handleTabChange}/>
