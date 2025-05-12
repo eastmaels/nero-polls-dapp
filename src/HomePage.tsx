@@ -32,6 +32,7 @@ const TOKEN_FACTORY_ADDRESS = '0x00ef47f5316A311870fe3F3431aA510C5c2c5a90';
 const HomePage = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { AAaddress, isConnected, simpleAccountInstance } = useSignature();
+  const [isVoting, setIsVoting] = useState(false);
 
   const client = useContext(ClientContext);
   const signer = useEthersSigner()
@@ -41,18 +42,8 @@ const HomePage = () => {
   const [userOpHash, setUserOpHash] = useState<string | null>(null);
   const [txStatus, setTxStatus] = useState<string>('');
   const [isPolling, setIsPolling] = useState(false);
-  const [nfts, setNfts] = useState<any[]>([]);
   const [polls, setPolls] = useState<any[]>([]);
-  const [userOperations, setUserOperations] = useState<UserOperation[]>([])
   
-  // Form state
-  const [tokenName, setTokenName] = useState('');
-  const [tokenSymbol, setTokenSymbol] = useState('');
-  const [tokenSupply, setTokenSupply] = useState('100000');
-  const [nftName, setNftName] = useState('');
-  const [nftDescription, setNftDescription] = useState('');
-  const [nftImageUrl, setNftImageUrl] = useState('');
-
   useEffect(() => {
     if (isConnected) {
       fetchPolls();
@@ -78,29 +69,11 @@ const HomePage = () => {
       return;
     }
 
-    // if (!nftName || !nftImageUrl) {
-    //   alert('Please provide a name and image URL for your NFT');
-    //   return;
-    // }
-
     setIsLoading(true);
     setUserOpHash(null);
     setTxStatus('');
 
     try {
-      // const pollForm = {
-      //   subject: 'Sample Poll',
-      //   description: "Sample description",
-      //   options: ['Option 1', 'Option 2', 'Option 3'],
-      //   rewardPerResponse: '0.1',
-      //   duration: "10", // days
-      //   maxResponses: "10",
-      //   minContribution: '1',
-      //   targetFund: '10',
-      // }
-      console.log('pollForm2', pollForm);
-
-      //*
       await execute({
         function: 'createPoll',
         contractAddress: CONTRACT_ADDRESSES.dpollsContract,
@@ -117,21 +90,13 @@ const HomePage = () => {
         ],
         value: 0,
       });
-      /* */
 
       const result = await waitForUserOpResult();
-      console.log('Result:', result);
       setUserOpHash(result.userOpHash);
       setIsPolling(true);
 
       if (result.result === true) {
-        setTxStatus(`Success! NFT "${nftName}" minted!`);
         setIsPolling(false);
-        // Reset form
-        setNftName('');
-        setNftDescription('');
-        setNftImageUrl('');
-        // Refresh NFT gallery after successful mint
         fetchPolls();
       } else if (result.transactionHash) {
         setTxStatus('Transaction hash: ' + result.transactionHash);
@@ -149,7 +114,6 @@ const HomePage = () => {
 
     try {
       setIsLoading(true);
-      setNfts([]); // Clear existing NFTs while loading
       
       // Create a provider using the RPC URL from config
       const provider = new ethers.providers.JsonRpcProvider(config.rpcUrl);
@@ -163,14 +127,16 @@ const HomePage = () => {
       
       // Get all poll IDs
       const allPollIds = await pollsContract.getAllPollIds();
-      console.log("All Poll IDs:", allPollIds);
-
       if (allPollIds.length > 0) {
         const fetchedPolls = await Promise.all(
           allPollIds.map(async (pollId: number) => {
             try {
               // Get poll details using the polls function
               const pollDetails = await pollsContract.getPoll(pollId);
+              const pollResponses = await pollsContract.getPollResponses(pollId);
+              const modPollResponses = pollResponses.map((response: any) => {
+                return response.response
+              });
               
               // Format the poll data
               return {
@@ -186,7 +152,8 @@ const HomePage = () => {
                 totalResponses: pollDetails.totalResponses.toString(),
                 funds: pollDetails.funds,
                 minContribution: pollDetails.minContribution,
-                targetFund: pollDetails.targetFund
+                targetFund: pollDetails.targetFund,
+                responses: modPollResponses,
               };
             } catch (error) {
               console.error(`Error fetching Poll #${pollId}:`, error);
@@ -194,14 +161,12 @@ const HomePage = () => {
             }
           })
         );
-        console.log('fetchedPolls:', fetchedPolls);
 
         // Filter out any null values from failed fetches
         const validPolls = fetchedPolls.filter(poll => poll !== null);
         
         if (validPolls.length > 0) {
           setPolls(validPolls);
-          setNfts(validPolls);
           setTxStatus(`Found ${validPolls.length} Polls`);
         } else {
           setTxStatus('No valid polls found');
@@ -230,7 +195,6 @@ const HomePage = () => {
       } else {
         setTxStatus('No polls found');
         setPolls([]);
-        setNfts([]);
       }
     } catch (error) {
       console.error('Error fetching polls:', error);
@@ -287,7 +251,12 @@ const HomePage = () => {
 
       {/* Tab Content */}
       {activeTab === 'dashboard' && (
-        <Dashboard AAaddress={AAaddress} handleTabChange={handleTabChange} polls={polls} />
+        <Dashboard
+          AAaddress={AAaddress}
+          handleTabChange={handleTabChange}
+          polls={polls}
+          fetchPolls={fetchPolls}
+        />
       )}
       {activeTab === 'create-poll' && (
         <CreatePoll handleCreatePoll={handleCreatePoll} handleTabChange={handleTabChange}/>

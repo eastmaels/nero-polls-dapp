@@ -1,14 +1,28 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui_v2/button"
+import { useSignature, useSendUserOp, useConfig, useEthersSigner } from '@/hooks';
+import { ERC20_ABI_DPOLLS,  } from '@/constants/abi';
+import { CONTRACT_ADDRESSES } from '@/constants/contracts'
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui_v2/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui_v2/tabs"
 import { Badge } from "@/components/ui_v2/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui_v2/avatar"
 import { PlusCircle, Clock, Users } from "lucide-react"
+import { Button, Modal, Space } from 'antd';
 
-export default function Dashboard({ AAaddress, handleTabChange, polls }: { AAaddress: string, handleTabChange: (tab: string) => void, polls: any[] }) {
+// Define NeroNFT ABI with the mint function
+const NERO_POLL_ABI = [
+  // Basic ERC721 functions from the standard ABI
+  ...ERC20_ABI_DPOLLS,
+  // Add the mint function that exists in the NeroNFT contract
+  'function mint(address to, string memory uri) returns (uint256)',
+  'function tokenURI(uint256 tokenId) view returns (string memory)',
+];
+
+export default function Dashboard({ AAaddress, handleTabChange, polls, fetchPolls }: 
+  { AAaddress: string, handleTabChange: (tab: string) => void, polls: any[], fetchPolls: () => void }) {
   const [activeTab, setActiveTab] = useState("active")
 
   // Filter polls based on their status
@@ -16,8 +30,6 @@ export default function Dashboard({ AAaddress, handleTabChange, polls }: { AAadd
   const createdPolls = polls.filter(poll => poll.creator === AAaddress)
   const votedPolls = polls.filter(poll => poll.voted) // Assuming there's a voted flag
   
-  console.log(activePolls);
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -46,7 +58,10 @@ export default function Dashboard({ AAaddress, handleTabChange, polls }: { AAadd
         <TabsContent value="active" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {activePolls.map((poll) => (
-              <PollCard key={poll.id} poll={poll} type="active" />
+              <PollCard
+                key={poll.id} poll={poll} type="active"
+                fetchPolls={fetchPolls}
+              />
             ))}
             {activePolls.length === 0 && (
               <div className="col-span-3 text-center py-10">
@@ -59,7 +74,10 @@ export default function Dashboard({ AAaddress, handleTabChange, polls }: { AAadd
         <TabsContent value="created" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {createdPolls.map((poll) => (
-              <PollCard key={poll.id} poll={poll} type="created" />
+              <PollCard
+                key={poll.id} poll={poll} type="created" 
+                fetchPolls={fetchPolls}
+              />
             ))}
             {createdPolls.length === 0 && (
               <div className="col-span-3 text-center py-10">
@@ -75,7 +93,10 @@ export default function Dashboard({ AAaddress, handleTabChange, polls }: { AAadd
         <TabsContent value="voted" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {votedPolls.map((poll) => (
-              <PollCard key={poll.id} poll={poll} type="voted" />
+              <PollCard 
+                key={poll.id} poll={poll} type="voted" 
+                fetchPolls={fetchPolls}
+              />
             ))}
             {votedPolls.length === 0 && (
               <div className="col-span-3 text-center py-10">
@@ -90,7 +111,6 @@ export default function Dashboard({ AAaddress, handleTabChange, polls }: { AAadd
 }
 
 function calculateTimeLeft(endTime: string | Date): string {
-  console.log('endTime:', endTime);
   const endDate = new Date(endTime);
   const now = new Date();
   
@@ -105,7 +125,90 @@ function calculateTimeLeft(endTime: string | Date): string {
   return `${days} days left`;
 }
 
-function PollCard({ poll, type }) {
+
+function PollCard({ poll, type, fetchPolls }: 
+  { poll: any, type: string, fetchPolls: () => void }) {
+  
+  const { isConnected, } = useSignature();
+  const { execute, waitForUserOpResult, sendUserOp } = useSendUserOp();
+  const [userOpHash, setUserOpHash] = useState<string | null>(null);
+  const [txStatus, setTxStatus] = useState<string>('');
+  const [isPolling, setIsPolling] = useState(false);
+  const [isVoting, setIsVoting] = useState(false);
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const getRandomPercentage = () => {
+    return Math.floor(Math.random() * 100);
+  }
+  
+  const showModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleOk = () => {
+    setIsModalOpen(false);
+  };
+
+  const handleCancel = () => {
+    setIsModalOpen(false);
+  };
+
+  const handleOptionVote = async (option) => {
+    if (!isConnected) {
+      alert('Please connect your wallet first');
+      return;
+    }
+
+    setIsVoting(true);
+    setUserOpHash(null);
+    setTxStatus('');
+
+    try {
+      await execute({
+        function: 'submitResponse',
+        contractAddress: CONTRACT_ADDRESSES.dpollsContract,
+        abi: NERO_POLL_ABI, // Use the specific ABI with mint function
+        params: [
+          poll.id,
+          option.text,
+        ],
+        value: 0,
+      });
+
+      const result = await waitForUserOpResult();
+      setUserOpHash(result.userOpHash);
+      setIsPolling(true);
+
+      if (result.result === true) {
+        setIsPolling(false);
+        fetchPolls();
+      } else if (result.transactionHash) {
+        setTxStatus('Transaction hash: ' + result.transactionHash);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setTxStatus('An error occurred');
+    } finally {
+      setIsVoting(false);
+      setIsModalOpen(false);
+    }
+
+  };
+
+  const computePercentage = (responses: string[], option: string) => {
+    if (responses?.length === 0) {
+      return 0;
+    }
+    const totalResponses = responses?.length;
+    const optionCount = responses?.filter(response => response === option).length;
+    return Math.floor((optionCount / totalResponses) * 100);
+  }
+
+  const modOptions = poll.options.map((option) => {
+    return { text: option, percentage: computePercentage(poll.responses, option)};
+  });
+
   return (
     <Card className="overflow-hidden">
       <CardHeader className="pb-3">
@@ -125,7 +228,7 @@ function PollCard({ poll, type }) {
         </div>
 
         <div className="space-y-2">
-          {(poll.options || []).slice(0, 3).map((option, index) => (
+          {(modOptions || []).slice(0, 3).map((option, index) => (
             <div key={index} className="relative pt-1">
               <div className="flex justify-between items-center mb-1">
                 <span className="text-xs font-medium text-muted-foreground">{typeof option === 'string' ? option : option.text}</span>
@@ -139,9 +242,9 @@ function PollCard({ poll, type }) {
               </div>
             </div>
           ))}
-          {(poll.options || []).length > 3 && (
+          {(modOptions || []).length > 3 && (
             <div className="text-xs text-center text-muted-foreground mt-1">
-              +{poll.options.length - 3} more options
+              +{modOptions.length - 3} more options
             </div>
           )}
         </div>
@@ -154,12 +257,33 @@ function PollCard({ poll, type }) {
           </Avatar>
           <span className="text-xs text-muted-foreground">{poll.creator}</span>
         </div>
-        <Button variant={type === "voted" ? "outline" : "default"} size="sm" className="text-white">
+        <Button
+          // variant={type === "voted" ? "outline" : "default"} size="sm" className="text-white"
+          onClick={showModal}
+        >
           {type === "active" && "Vote"}
           {type === "created" && "Manage"}
-          {type === "voted" && "Results"}
         </Button>
       </CardFooter>
+      <Modal
+        title={poll.subject || poll.title || poll.question}
+        open={isModalOpen}
+        onOk={handleOk}
+        onCancel={handleCancel}
+        footer={null}
+        maskClosable={false}
+      >
+        <Space direction="vertical" size="middle">
+        {modOptions.map((option, index) => (
+          <Button
+            key={index} block onClick={() => handleOptionVote(option)}
+            loading={isVoting}
+          >
+            {option.text}
+          </Button>
+        ))}
+        </Space>
+      </Modal>
     </Card>
   )
 }
