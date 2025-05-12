@@ -4,15 +4,14 @@ import { useState } from "react"
 import { useSignature, useSendUserOp, useConfig, useEthersSigner } from '@/hooks';
 import { ERC20_ABI_DPOLLS,  } from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts'
-
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui_v2/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui_v2/tabs"
 import { Badge } from "@/components/ui_v2/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui_v2/avatar"
 import { PlusCircle, Clock, Users } from "lucide-react"
 import { Button, Modal, Space } from 'antd';
+import ManagePoll from "./manage-poll";
 
-// Define NeroNFT ABI with the mint function
 const NERO_POLL_ABI = [
   // Basic ERC721 functions from the standard ABI
   ...ERC20_ABI_DPOLLS,
@@ -61,6 +60,7 @@ export default function Dashboard({ AAaddress, handleTabChange, polls, fetchPoll
               <PollCard
                 key={poll.id} poll={poll} type="active"
                 fetchPolls={fetchPolls}
+                handleTabChange={handleTabChange}
               />
             ))}
             {activePolls.length === 0 && (
@@ -77,6 +77,7 @@ export default function Dashboard({ AAaddress, handleTabChange, polls, fetchPoll
               <PollCard
                 key={poll.id} poll={poll} type="created" 
                 fetchPolls={fetchPolls}
+                handleTabChange={() => handleTabChange('create-poll')}
               />
             ))}
             {createdPolls.length === 0 && (
@@ -126,8 +127,8 @@ function calculateTimeLeft(endTime: string | Date): string {
 }
 
 
-function PollCard({ poll, type, fetchPolls }: 
-  { poll: any, type: string, fetchPolls: () => void }) {
+function PollCard({ poll, type, fetchPolls, handleTabChange }: 
+  { poll: any, type: string, fetchPolls: () => void, handleTabChange?: (tab: string) => void }) {
   
   const { isConnected, } = useSignature();
   const { execute, waitForUserOpResult, sendUserOp } = useSendUserOp();
@@ -135,13 +136,14 @@ function PollCard({ poll, type, fetchPolls }:
   const [txStatus, setTxStatus] = useState<string>('');
   const [isPolling, setIsPolling] = useState(false);
   const [isVoting, setIsVoting] = useState(false);
-  
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [confirmLoading, setConfirmLoading] = useState(false);
-  const getRandomPercentage = () => {
-    return Math.floor(Math.random() * 100);
-  }
-  
+  const [isManagePollModalOpen, setIsManagePollModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const showManagePollModal = () => {
+    setIsManagePollModalOpen(true);
+  };
+
   const showModal = () => {
     setIsModalOpen(true);
   };
@@ -259,7 +261,13 @@ function PollCard({ poll, type, fetchPolls }:
         </div>
         <Button
           // variant={type === "voted" ? "outline" : "default"} size="sm" className="text-white"
-          onClick={showModal}
+          onClick={() => {
+            if (type === "active") {
+              showModal();
+            } else if (type === "created") {
+              showManagePollModal();
+            }
+          }}
         >
           {type === "active" && "Vote"}
           {type === "created" && "Manage"}
@@ -284,6 +292,21 @@ function PollCard({ poll, type, fetchPolls }:
         ))}
         </Space>
       </Modal>
+      <Modal
+        title={poll.subject || poll.title || poll.question}
+        open={isManagePollModalOpen}
+        onOk={() => {
+          setIsManagePollModalOpen(false);
+          fetchPolls();
+        }}
+        onCancel={() => {
+          setIsManagePollModalOpen(false);
+        }}
+        footer={null}
+        maskClosable={false}
+      >
+        <ManagePoll poll={poll} />
+      </Modal>
     </Card>
   )
 }
@@ -305,114 +328,3 @@ function StatusBadge({ status }) {
     )
   }
 }
-
-// Sample data
-const activePolls = [
-  {
-    id: 1,
-    title: "Should we integrate with Arbitrum?",
-    description:
-      "Vote on whether our protocol should expand to the Arbitrum network for lower gas fees and faster transactions.",
-    status: "active",
-    timeLeft: "2 days left",
-    votes: 342,
-    creator: "0x71C...93A4",
-    options: [
-      { text: "Yes, ASAP", percentage: 65 },
-      { text: "Yes, but later", percentage: 20 },
-      { text: "No", percentage: 10 },
-      { text: "Undecided", percentage: 5 },
-    ],
-  },
-  {
-    id: 2,
-    title: "Treasury allocation for Q3",
-    description: "How should we allocate the community treasury funds for the upcoming quarter?",
-    status: "active",
-    timeLeft: "5 days left",
-    votes: 189,
-    creator: "0x45D...21B7",
-    options: [
-      { text: "Development", percentage: 45 },
-      { text: "Marketing", percentage: 30 },
-      { text: "Liquidity", percentage: 15 },
-      { text: "Community rewards", percentage: 10 },
-    ],
-  },
-  {
-    id: 3,
-    title: "New governance model proposal",
-    description: "Should we adopt a new governance model with delegated voting?",
-    status: "active",
-    timeLeft: "1 day left",
-    votes: 421,
-    creator: "0x92F...76C1",
-    options: [
-      { text: "Keep current model", percentage: 35 },
-      { text: "Adopt new model", percentage: 55 },
-      { text: "Need more information", percentage: 10 },
-    ],
-  },
-]
-
-const createdPolls = [
-  {
-    id: 4,
-    title: "Token burn mechanism",
-    description: "Should we implement a token burn mechanism to reduce supply?",
-    status: "active",
-    timeLeft: "3 days left",
-    votes: 156,
-    creator: "0x71C...93A4",
-    options: [
-      { text: "Yes, 1% per transaction", percentage: 40 },
-      { text: "Yes, 0.5% per transaction", percentage: 35 },
-      { text: "No burn", percentage: 25 },
-    ],
-  },
-  {
-    id: 5,
-    title: "Community call frequency",
-    description: "How often should we hold community calls?",
-    status: "ended",
-    timeLeft: "Ended 2 days ago",
-    votes: 203,
-    creator: "0x71C...93A4",
-    options: [
-      { text: "Weekly", percentage: 25 },
-      { text: "Bi-weekly", percentage: 60 },
-      { text: "Monthly", percentage: 15 },
-    ],
-  },
-]
-
-const votedPolls = [
-  {
-    id: 6,
-    title: "Logo redesign options",
-    description: "Vote for your preferred logo design for our rebrand.",
-    status: "active",
-    timeLeft: "6 days left",
-    votes: 312,
-    creator: "0x38A...F4E2",
-    options: [
-      { text: "Design A", percentage: 30 },
-      { text: "Design B", percentage: 45 },
-      { text: "Design C", percentage: 25 },
-    ],
-  },
-  {
-    id: 7,
-    title: "Fee structure update",
-    description: "Should we update our fee structure to be more competitive?",
-    status: "ended",
-    timeLeft: "Ended 1 day ago",
-    votes: 278,
-    creator: "0x59B...A3D1",
-    options: [
-      { text: "Keep current fees", percentage: 20 },
-      { text: "Reduce fees by 25%", percentage: 65 },
-      { text: "Reduce fees by 50%", percentage: 15 },
-    ],
-  },
-]

@@ -52,7 +52,6 @@ contract PollsDApp {
         string subject;
         string description;
         string[] options;
-        string[] responses;
         uint256 rewardPerResponse;
         uint256 maxResponses;
         uint256 endTime;
@@ -142,6 +141,43 @@ contract PollsDApp {
         pollCounter++;
     }
 
+    function updatePoll(
+        uint256 pollId,
+        string memory subject,
+        string memory description,
+        bool isOpen,
+        string[] memory options,
+        uint256 rewardPerResponse,
+        uint256 durationDays,
+        uint256 maxResponses,
+        uint256 minContribution,
+        uint256 targetFund
+    ) external payable {
+        Poll storage p = polls[pollId];
+
+        require(msg.sender == p.content.creator, "Not creator");
+        require(!p.content.isOpen, "Already open");
+        require(options.length >= 2, "Need at least 2 options");
+        require(durationDays > 0, "Invalid duration");
+        require(minContribution > 0, "Min contribution must be positive");
+        require(targetFund >= minContribution, "Target fund must be >= min contribution");
+        require(targetFund >= rewardPerResponse * maxResponses, "Target fund must be greater than or equal to (reward per response x max responses)");
+
+        p.content.subject = subject;
+        p.content.description = description;
+        p.content.isOpen = isOpen;
+        p.content.options = options;
+
+        p.settings.rewardPerResponse = rewardPerResponse;
+        p.settings.maxResponses = maxResponses;
+        p.settings.durationDays = durationDays;
+        p.settings.minContribution = minContribution;
+        p.settings.targetFund = targetFund;
+        p.settings.endTime = block.timestamp + (durationDays * 1 days);
+
+        emit PollUpdated(pollId, msg.sender, p.content.subject);
+    }
+
     function submitResponse(uint256 pollId, string memory response) external payable nonReentrant {
         Poll storage p = polls[pollId];
         require(p.content.isOpen, "Poll is closed");
@@ -207,22 +243,11 @@ contract PollsDApp {
     function getPoll(uint256 pollId) external view returns (PollView memory) {
         Poll storage p = polls[pollId];
 
-        // Create array of active polls
-        string[] memory responses = new string[](p.responses.length);
-        uint256 currentIndex = 0;
-        
-        // Fill array with active polls
-        for (uint256 i = 0; i < pollIds.length; i++) {
-            responses[currentIndex] = p.responses[currentIndex].response;
-            currentIndex++;
-        }
-
         return PollView({
             creator: p.content.creator,
             subject: p.content.subject,
             description: p.content.description,
             options: p.content.options,
-            responses: responses,
             rewardPerResponse: p.settings.rewardPerResponse,
             maxResponses: p.settings.maxResponses,
             endTime: p.settings.endTime,
