@@ -17,6 +17,7 @@ export const ERC20_ABI = [
 export const ERC20_ABI_DPOLLS = [
   // Poll Creation and Management
   'function createPoll(string subject, string description, string[] options, uint256 rewardPerResponse, uint256 durationDays, uint256 maxResponses, uint256 minContribution, uint256 targetFund) external payable',
+  'function updatePoll(uint256 pollId, string subject, string description, bool isOpen, string[] options, uint256 rewardPerResponse, uint256 durationDays, uint256 maxResponses, uint256 minContribution, uint256 targetFund) external payable',
   'function submitResponse(uint256 pollId, string response) external payable',
   'function closePoll(uint256 pollId) external',
   'function cancelPoll(uint256 pollId) external',
@@ -27,6 +28,7 @@ export const ERC20_ABI_DPOLLS = [
   // View Functions
   'function pollCounter() view returns (uint256)',
   'function pollIds(uint256) view returns (uint256)',
+  'function polls(uint256) view returns (tuple(tuple(address creator, string subject, string description, string status, string[] options, bool isOpen) content, tuple(uint256 rewardPerResponse, uint256 maxResponses, uint256 durationDays, uint256 minContribution, uint256 targetFund, uint256 endTime, uint256 totalResponses, uint256 funds) settings, tuple(address responder, string response, uint256 weight, uint256 timestamp, bool isClaimed, uint256 reward)[] responses))',
   'function getOptions(uint256 pollId) view returns (string[])',
   'function getPollStatus(uint256 pollId) view returns (bool isOpen, uint256 endTime, uint256 totalResponses)',
   'function getAllPollIds() view returns (uint256[])',

@@ -2,20 +2,10 @@ import { useState, useContext, useEffect } from 'react';
 import { useSignature, useSendUserOp, useConfig, useEthersSigner } from '@/hooks';
 import { ERC20_ABI_DPOLLS,  } from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts'
-import { ClientContext, SignatureContext } from '@/contexts'
+import { ClientContext } from '@/contexts'
 import { ethers } from 'ethers';
-import {
-  UserOperation,
-  UserOperationResultInterface,
-  SendUserOpContextProps,
-  ProviderProps,
-  DAppTransactionData,
-} from '@/types'
-import { executeDAppTransaction } from '@/helper/executeTransaction';
 import Dashboard from "./dashboard"
 import CreatePoll from "./create-poll"
-// Import ABIs
-import CreateTokenFactory from '@/abis/ERC20/CreateTokenFactory.json';
 
 // Define NeroNFT ABI with the mint function
 const NERO_POLL_ABI = [

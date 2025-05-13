@@ -1,14 +1,16 @@
 "use client"
 
 import { useState } from "react"
+import { ERC20_ABI_DPOLLS,  } from '@/constants/abi';
+import { CONTRACT_ADDRESSES } from '@/constants/contracts'
 import { Trash2, PlusCircle, } from "lucide-react"
 import { DatePicker, DatePickerProps } from "antd";
 import { Button, Form, Input, Card, Space } from 'antd';
 import { Steps } from 'antd';
-
-interface CreatePollProps {
-  handleCreatePoll: (pollData: any) => Promise<void>;
-  handleTabChange: (tab: string) => void;
+import { useSignature, useSendUserOp } from "@/hooks";
+import { ethers } from 'ethers';
+interface ManagePollProps {
+  poll: any;
 }
 
 interface PollOption {
@@ -16,17 +18,37 @@ interface PollOption {
   text: string;
 }
 
+const NERO_POLL_ABI = [
+  // Basic ERC721 functions from the standard ABI
+  ...ERC20_ABI_DPOLLS,
+  // Add the mint function that exists in the NeroNFT contract
+  'function mint(address to, string memory uri) returns (uint256)',
+  'function tokenURI(uint256 tokenId) view returns (string memory)',
+];
 const onChange: DatePickerProps['onChange'] = (date, dateString) => {
   console.log(date, dateString);
 };
 
-export default function CreatePoll({ handleCreatePoll, handleTabChange }: CreatePollProps) {
+export default function ManagePoll({ poll }: ManagePollProps) {
+  console.log("poll", poll);
+
+  const { isConnected, } = useSignature();
+  const { execute, waitForUserOpResult, sendUserOp } = useSendUserOp();
+  const [userOpHash, setUserOpHash] = useState<string | null>(null);
+  const [txStatus, setTxStatus] = useState<string>('');
+  const [isPolling, setIsPolling] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [options, setOptions] = useState<PollOption[]>([
-    { id: 1, text: "" },
-    { id: 2, text: "" },
-  ]);
+  const [options, setOptions] = useState<PollOption[]>([]);
+  form.setFieldsValue({
+    subject: poll.subject,
+    description: poll.description,
+    endDate: poll.endDate,
+    options: poll.options,
+    settings: poll.settings
+  });
 
   const [current, setCurrent] = useState(0);
   const steps = [
@@ -47,34 +69,48 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
     setCurrent(current - 1);
   };
 
-  const handleSubmit = async () => {
-    setLoading(true);
+  const handleUpdatePoll = async (pollForm: any) => {
+    if (!isConnected) {
+      alert('Please connect your wallet first');
+      return;
+    }
+
+    setIsLoading(true);
+    setUserOpHash(null);
+    setTxStatus('');
+
     try {
-      await form.validateFields();
-      const fieldsValue = form.getFieldsValue(true);
-      console.log('fieldsValue:', fieldsValue);
+      await execute({
+        function: 'createPoll',
+        contractAddress: CONTRACT_ADDRESSES.dpollsContract,
+        abi: NERO_POLL_ABI, // Use the specific ABI with mint function
+        params: [
+          pollForm.subject,
+          pollForm.description,
+          pollForm.options,
+          ethers.utils.parseEther(pollForm.rewardPerResponse).toString(),
+          parseInt(pollForm.duration),
+          parseInt(pollForm.maxResponses),
+          ethers.utils.parseEther(pollForm.minContribution).toString(),
+          ethers.utils.parseEther(pollForm.targetFund).toString(),
+        ],
+        value: 0,
+      });
 
-      // Calculate duration in days
-      const endDate = fieldsValue.endDate?.toDate();
-      console.log('endDate:', endDate);
-      const currentDate = new Date();
-      const durationInMs = endDate.getTime() - currentDate.getTime();
-      const durationInDays = Math.ceil(durationInMs / (1000 * 60 * 60 * 24));
+      const result = await waitForUserOpResult();
+      setUserOpHash(result.userOpHash);
+      setIsPolling(true);
 
-      const pollData = {
-        ...fieldsValue,
-        options: fieldsValue.options.map((item: any) => item.text),
-        endDate: endDate,
-        duration: durationInDays // Add the calculated duration
-      };
-
-      console.log('Submitting poll data:', pollData);
-      await handleCreatePoll(pollData);
-      handleTabChange("dashboard");
+      if (result.result === true) {
+        setIsPolling(false);
+      } else if (result.transactionHash) {
+        setTxStatus('Transaction hash: ' + result.transactionHash);
+      }
     } catch (error) {
-      console.error('Validation failed:', error);
+      console.error('Error:', error);
+      setTxStatus('An error occurred');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -245,7 +281,7 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
           {current === steps.length - 1 && (
             <Button
             type="primary"
-            onClick={handleSubmit}
+            onClick={handleUpdatePoll}
             loading={loading}
             >
               Submit
