@@ -233,7 +233,10 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
 
         <div style={{ marginTop: 24 }}>
           {current > 0 && (
-            <Button style={{ margin: '0 8px' }} onClick={() => prev()}>
+            <Button
+              style={{ margin: '0 8px' }} onClick={() => prev()}
+              disabled={loading}
+            >
               Previous
             </Button>
           )}

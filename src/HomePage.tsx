@@ -6,6 +6,7 @@ import { ClientContext } from '@/contexts'
 import { ethers } from 'ethers';
 import Dashboard from "./dashboard"
 import CreatePoll from "./create-poll"
+import EnvelopeGame from "./components/envelope-game"
 
 // Define NeroNFT ABI with the mint function
 const NERO_POLL_ABI = [
@@ -99,6 +100,47 @@ const HomePage = () => {
     }
   };
 
+  const handleOptionVote = async (poll, option) => {
+    if (!isConnected) {
+      alert('Please connect your wallet first');
+      return;
+    }
+
+    setIsVoting(true);
+    setUserOpHash(null);
+    setTxStatus('');
+
+    try {
+      await execute({
+        function: 'submitResponse',
+        contractAddress: CONTRACT_ADDRESSES.dpollsContract,
+        abi: NERO_POLL_ABI, // Use the specific ABI with mint function
+        params: [
+          poll.id,
+          option.text,
+        ],
+        value: 0,
+      });
+
+      const result = await waitForUserOpResult();
+      setUserOpHash(result.userOpHash);
+      setIsPolling(true);
+
+      if (result.result === true) {
+        setIsPolling(false);
+        fetchPolls();
+      } else if (result.transactionHash) {
+        setTxStatus('Transaction hash: ' + result.transactionHash);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setTxStatus('An error occurred');
+    } finally {
+      setIsVoting(false);
+    }
+
+  };
+
   const fetchPolls = async () => {
     if (!isConnected || !AAaddress) return;
 
@@ -127,6 +169,13 @@ const HomePage = () => {
               const modPollResponses = pollResponses.map((response: any) => {
                 return response.response
               });
+              const pollResonsesWithAddress = pollResponses.map((response: any) => {
+                return {
+                  address: response.responder,
+                  response: response.response,
+                  isClaimed: response.isClaimed,
+                }
+              });
               
               // Format the poll data
               return {
@@ -144,6 +193,7 @@ const HomePage = () => {
                 minContribution: pollDetails.minContribution,
                 targetFund: pollDetails.targetFund,
                 responses: modPollResponses,
+                responsesWithAddress: pollResonsesWithAddress
               };
             } catch (error) {
               console.error(`Error fetching Poll #${pollId}:`, error);
@@ -232,6 +282,12 @@ const HomePage = () => {
           Dashboard
         </button>
         <button
+          className={`px-4 py-2 rounded-md ${activeTab === 'game' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+          onClick={() => handleTabChange('game')}
+        >
+          Game
+        </button>
+        <button
           className={`px-4 py-2 rounded-md ${activeTab === 'create-poll' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
           onClick={() => handleTabChange('create-poll')}
         >
@@ -248,75 +304,17 @@ const HomePage = () => {
           fetchPolls={fetchPolls}
         />
       )}
+      {activeTab === 'game' && (
+        <EnvelopeGame
+          AAaddress={AAaddress}
+          handleTabChange={handleTabChange}
+          pollsSrc={polls}
+          fetchPolls={fetchPolls}
+          handleOptionVote={handleOptionVote}
+        />
+      )}
       {activeTab === 'create-poll' && (
         <CreatePoll handleCreatePoll={handleCreatePoll} handleTabChange={handleTabChange}/>
-      )}
-      {(activeTab !== 'create-poll' && activeTab !== 'dashboard') && (
-        <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6">
-          {/* NFT Gallery */}
-          {activeTab === 'nft-gallery' && (
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Your NFT Gallery</h2>
-              <button
-                onClick={fetchPolls}
-                disabled={isLoading}
-                className="mb-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-300"
-              >
-                {isLoading ? 'Loading...' : 'Refresh Gallery'}
-              </button>
-              
-              <div className="grid grid-cols-1 gap-4 mt-4">
-                {isLoading ? (
-                  <div className="text-center py-10">
-                    <p className="text-gray-500">Loading polls...</p>
-                  </div>
-                ) : polls.length > 0 ? (
-                  polls.map((poll, index) => (
-                    <div key={index} className="border rounded-md p-4 bg-gray-50">
-                      <div className="flex flex-col sm:flex-row gap-4">
-                        <div className="w-full space-y-2">
-                          <h3 className="font-bold text-lg">{poll.question}</h3>
-                          <p className="text-sm text-gray-600">Creator: {poll.creator}</p>
-                          <p className="text-sm text-gray-600">Reward per response: {ethers.utils.formatEther(poll.rewardPerResponse)} ETH</p>
-                          <p className="text-sm text-gray-600">Max responses: {poll.maxResponses}</p>
-                          <p className="text-sm text-gray-600">Status: {poll.isOpen ? 'Open' : 'Closed'}</p>
-                          <p className="text-sm text-gray-600">Total responses: {poll.totalResponses}</p>
-                          <p className="text-sm text-gray-600">Current funds: {ethers.utils.formatEther(poll.funds)} ETH</p>
-                          <p className="text-sm text-gray-600">Target fund: {ethers.utils.formatEther(poll.targetFund)} ETH</p>
-                          <p className="text-sm text-gray-600">End time: {poll.endTime.toLocaleString()}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-10 border rounded-md">
-                    <p className="text-gray-500 mb-4">No polls found. Create some polls first!</p>
-                    <button
-                      onClick={() => handleTabChange('create-poll')}
-                      className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                    >
-                      Create Your First Poll
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Transaction Status */}
-          {txStatus && (
-            <div className="mt-4 p-3 bg-gray-100 rounded-md">
-              <p className="text-sm font-medium">
-                Status: <span className={txStatus.includes('Success') ? 'text-green-600' : 'text-blue-600'}>{txStatus}</span>
-              </p>
-              {userOpHash && (
-                <p className="text-xs mt-1 break-all">
-                  <span className="font-medium">UserOpHash:</span> {userOpHash}
-                </p>
-              )}
-            </div>
-          )}
-        </div>
       )}
     </div>
   );
