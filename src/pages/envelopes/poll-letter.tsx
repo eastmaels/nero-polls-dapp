@@ -3,15 +3,10 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import { X } from "lucide-react"
-import { useSignature, useSendUserOp, useConfig, useEthersSigner } from '@/hooks';
+import { useSignature, useSendUserOp } from '@/hooks';
 import { ERC20_ABI_DPOLLS, } from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui_v2/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui_v2/tabs"
-import { Badge } from "@/components/ui_v2/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui_v2/avatar"
-import { PlusCircle, Clock, Users } from "lucide-react"
-import { Button, Modal, Space } from 'antd';
+import { Button } from 'antd';
 
 interface PollLetterProps {
   poll: {

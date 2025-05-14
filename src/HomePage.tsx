@@ -4,9 +4,10 @@ import { ERC20_ABI_DPOLLS,  } from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts'
 import { ClientContext } from '@/contexts'
 import { ethers } from 'ethers';
-import Dashboard from "./dashboard"
-import CreatePoll from "./create-poll"
-import EnvelopeGame from "./components/envelope-game"
+import Dashboard from "@/pages/simple/dashboard"
+import CreatePoll from "@/pages/simple/create-poll"
+import EnvelopeGame from "@/pages/envelopes/envelope-game"
+import DungeonsAndDragons from "@/pages/dnd/page"
 
 // Define NeroNFT ABI with the mint function
 const NERO_POLL_ABI = [
@@ -100,7 +101,7 @@ const HomePage = () => {
     }
   };
 
-  const handleOptionVote = async (poll, option) => {
+  const handleOptionVote = async (poll: any, option: any) => {
     if (!isConnected) {
       alert('Please connect your wallet first');
       return;
@@ -282,10 +283,16 @@ const HomePage = () => {
           Dashboard
         </button>
         <button
-          className={`px-4 py-2 rounded-md ${activeTab === 'game' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-          onClick={() => handleTabChange('game')}
+          className={`px-4 py-2 rounded-md ${activeTab === 'envelope-game' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+          onClick={() => handleTabChange('envelope-game')}
         >
-          Game
+          Envelopes
+        </button>
+        <button
+          className={`px-4 py-2 rounded-md ${activeTab === 'dnd-game' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+          onClick={() => handleTabChange('dnd-game')}
+        >
+          D&D
         </button>
         <button
           className={`px-4 py-2 rounded-md ${activeTab === 'create-poll' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
@@ -304,8 +311,17 @@ const HomePage = () => {
           fetchPolls={fetchPolls}
         />
       )}
-      {activeTab === 'game' && (
+      {activeTab === 'envelope-game' && (
         <EnvelopeGame
+          AAaddress={AAaddress}
+          handleTabChange={handleTabChange}
+          pollsSrc={polls}
+          fetchPolls={fetchPolls}
+          handleOptionVote={handleOptionVote}
+        />
+      )}
+      {activeTab === 'dnd-game' && (
+        <DungeonsAndDragons 
           AAaddress={AAaddress}
           handleTabChange={handleTabChange}
           pollsSrc={polls}

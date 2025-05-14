@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui_v2/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui_v2/avatar"
 import { PlusCircle, Clock, Users } from "lucide-react"
 import { Button, Modal, Space } from 'antd';
-import ManagePoll from "./manage-poll";
+import ManagePoll from "@/pages/simple/manage-poll";
 
 const NERO_POLL_ABI = [
   // Basic ERC721 functions from the standard ABI
