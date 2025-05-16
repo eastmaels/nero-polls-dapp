@@ -8,6 +8,7 @@ import Dashboard from "@/pages/simple/dashboard"
 import CreatePoll from "@/pages/simple/create-poll"
 import EnvelopeGame from "@/pages/envelopes/envelope-game"
 import DungeonsAndDragons from "@/pages/dnd/page"
+import LeaderboardPage from '@/pages/leaderboard/page';
 
 // Define NeroNFT ABI with the mint function
 const NERO_POLL_ABI = [
@@ -283,6 +284,12 @@ const HomePage = () => {
           Dashboard
         </button>
         <button
+          className={`px-4 py-2 rounded-md ${activeTab === 'leaderboard' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+          onClick={() => handleTabChange('leaderboard')}
+        >
+          Leaderboard
+        </button>
+        <button
           className={`px-4 py-2 rounded-md ${activeTab === 'envelope-game' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
           onClick={() => handleTabChange('envelope-game')}
         >
@@ -305,6 +312,14 @@ const HomePage = () => {
       {/* Tab Content */}
       {activeTab === 'dashboard' && (
         <Dashboard
+          AAaddress={AAaddress}
+          handleTabChange={handleTabChange}
+          polls={polls}
+          fetchPolls={fetchPolls}
+        />
+      )}
+      {activeTab === 'leaderboard' && (
+        <LeaderboardPage
           AAaddress={AAaddress}
           handleTabChange={handleTabChange}
           polls={polls}
