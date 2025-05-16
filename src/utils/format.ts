@@ -35,3 +35,7 @@ export const formatNumber = (value: string | number): string => {
     minimumFractionDigits: 0,
   })
 }
+
+export const convertTimestampToDate = (timestamp: number) => {
+  return new Date(Number(timestamp) * 1000);
+}

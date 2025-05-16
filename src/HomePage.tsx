@@ -9,6 +9,8 @@ import CreatePoll from "@/pages/simple/create-poll"
 import EnvelopeGame from "@/pages/envelopes/envelope-game"
 import DungeonsAndDragons from "@/pages/dnd/page"
 import LeaderboardPage from '@/pages/leaderboard/page';
+import { PollState } from '@/types/poll';
+import { convertTimestampToDate } from '@/utils/format';
 
 // Define NeroNFT ABI with the mint function
 const NERO_POLL_ABI = [
@@ -18,9 +20,6 @@ const NERO_POLL_ABI = [
   'function mint(address to, string memory uri) returns (uint256)',
   'function tokenURI(uint256 tokenId) view returns (string memory)',
 ];
-
-// Contract addresses for the testnet - you would need to update these with actual addresses
-const TOKEN_FACTORY_ADDRESS = '0x00ef47f5316A311870fe3F3431aA510C5c2c5a90';
 
 const HomePage = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -162,7 +161,7 @@ const HomePage = () => {
       // Get all poll IDs
       const allPollIds = await pollsContract.getAllPollIds();
       if (allPollIds.length > 0) {
-        const fetchedPolls = await Promise.all(
+        const fetchedPolls: PollState[] = await Promise.all(
           allPollIds.map(async (pollId: number) => {
             try {
               // Get poll details using the polls function
@@ -176,6 +175,9 @@ const HomePage = () => {
                   address: response.responder,
                   response: response.response,
                   isClaimed: response.isClaimed,
+                  weight: response.weight,
+                  timestamp: convertTimestampToDate(Number(response.timestamp)),
+                  reward: response.reward
                 }
               });
               
@@ -185,6 +187,7 @@ const HomePage = () => {
                 creator: pollDetails.creator,
                 subject: pollDetails.subject,
                 description: pollDetails.description,
+                createdAt: new Date(Number(pollDetails.endTime) * 1000 - Number(pollDetails.durationDays) * 24 * 60 * 60 * 1000),
                 options: pollDetails.options,
                 rewardPerResponse: pollDetails.rewardPerResponse,
                 maxResponses: pollDetails.maxResponses.toString(),
@@ -321,7 +324,6 @@ const HomePage = () => {
       {activeTab === 'leaderboard' && (
         <LeaderboardPage
           AAaddress={AAaddress}
-          handleTabChange={handleTabChange}
           polls={polls}
           fetchPolls={fetchPolls}
         />
