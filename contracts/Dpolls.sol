@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
+/// @title PollsDApp
+/// @notice A decentralized polling application
+/// @dev Optimized for contract size
 contract PollsDApp {
     // Reentrancy Guard
     bool private locked;
     
     modifier nonReentrant() {
-        require(!locked, "ReentrancyGuard: reentrant call");
+        require(!locked, "Reentrant");
         locked = true;
         _;
         locked = false;
@@ -51,6 +54,7 @@ contract PollsDApp {
         address creator;
         string subject;
         string description;
+        string status;
         string[] options;
         uint256 rewardPerResponse;
         uint256 maxResponses;
@@ -115,11 +119,11 @@ contract PollsDApp {
         uint256 minContribution,
         uint256 targetFund
     ) external payable {
-        require(options.length >= 2, "Need at least 2 options");
+        require(options.length >= 2, "Min 2 options");
         require(durationDays > 0, "Invalid duration");
-        require(minContribution > 0, "Min contribution must be positive");
-        require(targetFund >= minContribution, "Target fund must be >= min contribution");
-        require(targetFund >= rewardPerResponse * maxResponses, "Target fund must be greater than or equal to (reward per response x max responses)");
+        require(minContribution > 0, "Min contribution > 0");
+        require(targetFund >= minContribution, "Target >= min");
+        require(targetFund >= rewardPerResponse * maxResponses, "Target >= rewards");
 
         PollContent memory content = _initializePollContent(msg.sender, subject, description, options);
         PollSettings memory settings = _initializePollSettings(
@@ -157,11 +161,11 @@ contract PollsDApp {
 
         require(msg.sender == p.content.creator, "Not creator");
         require(!p.content.isOpen, "Already open");
-        require(options.length >= 2, "Need at least 2 options");
+        require(options.length >= 2, "Min 2 options");
         require(durationDays > 0, "Invalid duration");
-        require(minContribution > 0, "Min contribution must be positive");
-        require(targetFund >= minContribution, "Target fund must be >= min contribution");
-        require(targetFund >= rewardPerResponse * maxResponses, "Target fund must be greater than or equal to (reward per response x max responses)");
+        require(minContribution > 0, "Min contribution > 0");
+        require(targetFund >= minContribution, "Target >= min");
+        require(targetFund >= rewardPerResponse * maxResponses, "Target >= rewards");
 
         p.content.subject = subject;
         p.content.description = description;
@@ -180,9 +184,9 @@ contract PollsDApp {
 
     function submitResponse(uint256 pollId, string memory response) external payable nonReentrant {
         Poll storage p = polls[pollId];
-        require(p.content.isOpen, "Poll is closed");
-        require(block.timestamp < p.settings.endTime, "Poll has ended");
-        require(p.settings.totalResponses < p.settings.maxResponses, "Max responses reached");
+        require(p.content.isOpen, "Closed");
+        require(block.timestamp < p.settings.endTime, "Ended");
+        require(p.settings.totalResponses < p.settings.maxResponses, "Max reached");
 
         p.responses.push(PollResponse({
             responder: msg.sender,
@@ -195,7 +199,7 @@ contract PollsDApp {
         p.settings.totalResponses++;
     }
 
-    function closePoll(uint256 pollId) external {
+    function closePollForDistribution(uint256 pollId) external payable {
         Poll storage p = polls[pollId];
         require(msg.sender == p.content.creator, "Not creator");
         require(p.content.isOpen, "Already closed");
@@ -206,7 +210,7 @@ contract PollsDApp {
         emit PollClosed(pollId);
     }
 
-    function cancelPoll(uint256 pollId) external {
+    function cancelPoll(uint256 pollId) external payable {
         Poll storage p = polls[pollId];
         require(msg.sender == p.content.creator, "Not creator");
         require(p.content.isOpen, "Already closed");
@@ -216,7 +220,7 @@ contract PollsDApp {
         emit PollClosed(pollId);
     }
 
-    function openPoll(uint256 pollId) external {
+    function openPoll(uint256 pollId) external payable {
         Poll storage p = polls[pollId];
         require(msg.sender == p.content.creator, "Not creator");
         require(!p.content.isOpen, "Already open");
@@ -224,6 +228,15 @@ contract PollsDApp {
         p.content.isOpen = true;
         p.content.status = "open";
         p.settings.endTime = block.timestamp + (p.settings.durationDays * 1 days);
+        emit PollUpdated(pollId, msg.sender, p.content.subject);
+    }
+
+    function forClaiming(uint256 pollId) external payable {
+        Poll storage p = polls[pollId];
+        require(msg.sender == p.content.creator, "Not creator");
+        require(keccak256(bytes(p.content.status)) == keccak256(bytes("closed")), "Not closed");
+
+        p.content.status = "for-claiming";
         emit PollUpdated(pollId, msg.sender, p.content.subject);
     }
 
@@ -247,6 +260,7 @@ contract PollsDApp {
             creator: p.content.creator,
             subject: p.content.subject,
             description: p.content.description,
+            status: p.content.status,
             options: p.content.options,
             rewardPerResponse: p.settings.rewardPerResponse,
             maxResponses: p.settings.maxResponses,
@@ -272,18 +286,15 @@ contract PollsDApp {
     function getActivePolls() external view returns (Poll[] memory) {
         uint256 activeCount = 0;
         
-        // First count active polls
         for (uint256 i = 0; i < pollIds.length; i++) {
             if (polls[pollIds[i]].content.isOpen) {
                 activeCount++;
             }
         }
         
-        // Create array of active polls
         Poll[] memory activePolls = new Poll[](activeCount);
         uint256 currentIndex = 0;
         
-        // Fill array with active polls
         for (uint256 i = 0; i < pollIds.length; i++) {
             if (polls[pollIds[i]].content.isOpen) {
                 activePolls[currentIndex] = polls[pollIds[i]];
@@ -296,10 +307,10 @@ contract PollsDApp {
 
     function updateTargetFund(uint256 pollId, uint256 newTargetFund) external payable nonReentrant {
         Poll storage p = polls[pollId];
-        require(msg.sender == p.content.creator, "Only creator can update target");
-        require(p.content.isOpen, "Poll is not open");
-        require(newTargetFund >= p.settings.minContribution, "New target must be >= min contribution");
-        require(newTargetFund >= p.settings.funds, "New target must be >= current funds");
+        require(msg.sender == p.content.creator, "Not creator");
+        require(p.content.isOpen, "Not open");
+        require(newTargetFund >= p.settings.minContribution, "Target < min");
+        require(newTargetFund >= p.settings.funds, "Target < funds");
 
         uint256 oldTarget = p.settings.targetFund;
         p.settings.targetFund = newTargetFund;
@@ -309,10 +320,33 @@ contract PollsDApp {
 
     function fundPoll(uint256 pollId) external payable nonReentrant {
         Poll storage p = polls[pollId];
-        require(p.content.isOpen, "Poll is not open");
-        require(msg.value >= p.settings.minContribution, "Contribution below poll minimum");
-        require(p.settings.funds + msg.value <= p.settings.targetFund, "Would exceed poll's target fund");
+        require(p.content.isOpen, "Not open");
+        require(msg.value >= p.settings.minContribution, "Below min");
+        require(p.settings.funds + msg.value <= p.settings.targetFund, "Exceeds target");
         
         p.settings.funds += msg.value;
+    }
+
+    function claimReward(uint256 pollId) external payable nonReentrant {
+        Poll storage p = polls[pollId];
+        require(keccak256(bytes(p.content.status)) == keccak256(bytes("for-claiming")), "Not claiming");
+        
+        bool found = false;
+        uint256 totalReward = 0;
+        
+        for (uint256 i = 0; i < p.responses.length; i++) {
+            if (p.responses[i].responder == msg.sender && !p.responses[i].isClaimed) {
+                p.responses[i].isClaimed = true;
+                totalReward += p.responses[i].reward;
+                found = true;
+            }
+        }
+        
+        require(found, "No rewards");
+        require(totalReward > 0, "Zero reward");
+        require(address(this).balance >= totalReward, "Low balance");
+        
+        (bool success, ) = msg.sender.call{value: totalReward}("");
+        require(success, "Transfer failed");
     }
 }

@@ -167,10 +167,10 @@ const HomePage = () => {
               // Get poll details using the polls function
               const pollDetails = await pollsContract.getPoll(pollId);
               const pollResponses = await pollsContract.getPollResponses(pollId);
-              const modPollResponses = pollResponses.map((response: any) => {
+              const modPollResponses = pollResponses?.map((response: any) => {
                 return response.response
               });
-              const pollResonsesWithAddress = pollResponses.map((response: any) => {
+              const pollResonsesWithAddress = pollResponses?.map((response: any) => {
                 return {
                   address: response.responder,
                   response: response.response,
@@ -187,6 +187,7 @@ const HomePage = () => {
                 creator: pollDetails.creator,
                 subject: pollDetails.subject,
                 description: pollDetails.description,
+                status: pollDetails.status,
                 createdAt: new Date(Number(pollDetails.endTime) * 1000 - Number(pollDetails.durationDays) * 24 * 60 * 60 * 1000),
                 options: pollDetails.options,
                 rewardPerResponse: pollDetails.rewardPerResponse,
@@ -216,26 +217,7 @@ const HomePage = () => {
         } else {
           setTxStatus('No valid polls found');
           // Show sample polls as fallback
-          setPolls([
-            {
-              question: 'Sample Poll 1',
-              options: ['Option 1', 'Option 2', 'Option 3'],
-              rewardPerResponse: ethers.utils.parseEther('0.1'),
-              duration: 10,
-              maxResponses: 10,
-              minContribution: ethers.utils.parseEther('1').toString(),
-              targetFund: ethers.utils.parseEther('10').toString(),
-            },
-            {
-              question: 'Sample Poll 2',
-              options: ['Option 1', 'Option 2', 'Option 3'],
-              rewardPerResponse: ethers.utils.parseEther('0.1'),
-              duration: 10,
-              maxResponses: 10,
-              minContribution: ethers.utils.parseEther('1').toString(),
-              targetFund: ethers.utils.parseEther('10').toString(),
-            }
-          ]);
+          setPolls([]);
         }
       } else {
         setTxStatus('No polls found');
@@ -246,26 +228,7 @@ const HomePage = () => {
       setTxStatus('Error fetching polls');
       
       // Fallback to sample polls in case of error
-      setPolls([
-        {
-          question: 'Sample Poll 1',
-          options: ['Option 1', 'Option 2', 'Option 3'],
-          rewardPerResponse: ethers.utils.parseEther('0.1'),
-          duration: 10,
-          maxResponses: 10,
-          minContribution: ethers.utils.parseEther('1').toString(),
-          targetFund: ethers.utils.parseEther('10').toString(),
-        },
-        {
-          question: 'Sample Poll 2',
-          options: ['Option 1', 'Option 2', 'Option 3'],
-          rewardPerResponse: ethers.utils.parseEther('0.1'),
-          duration: 10,
-          maxResponses: 10,
-          minContribution: ethers.utils.parseEther('1').toString(),
-          targetFund: ethers.utils.parseEther('10').toString(),
-        }
-      ]);
+      setPolls([]);
     } finally {
       setIsLoading(false);
     }

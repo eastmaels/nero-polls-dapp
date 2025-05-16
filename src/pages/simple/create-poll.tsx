@@ -5,6 +5,7 @@ import { Trash2, PlusCircle, } from "lucide-react"
 import { DatePicker, DatePickerProps } from "antd";
 import { Button, Form, Input, Card, Space } from 'antd';
 import { Steps } from 'antd';
+import dayjs from 'dayjs';
 
 interface CreatePollProps {
   handleCreatePoll: (pollData: any) => Promise<void>;
@@ -123,6 +124,9 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
               picker="date"
               format="YYYY-MM-DD"
               style={{ width: '100%' }}
+              disabledDate={(current) => {
+                return current && current < dayjs().endOf('day');
+              }}
             />
           </Form.Item>
         </Card>
