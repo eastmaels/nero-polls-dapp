@@ -38,12 +38,16 @@ gantt
     Creating Polls            :b3, 2024-04-28, 14d
     Poll Smart Contract v3.0  :b4, 2024-05-12, 14d
     Submitting Responses      :b5, 2024-05-12, 14d
-    Viewing Results           :b6, 2024-05-12, 14d
-    Claiming Rewards          :b7, 2024-05-12, 14d
-    Modifying Polls           :b8, 2024-05-12, 14d
-    Poll Smart Contract v4.0  :b9, 2024-05-26, 14d
-    TBD                       :b10, 2024-06-09, 14d
-    TBD                       :b11, 2024-06-23, 14d
+    Viewing Results           :b7, 2024-05-12, 14d
+    Gamification              :b8, 2024-05-12, 14d
+    Leaderboard               :b9, 2024-05-12, 14d
+    Poll Smart Contract v4.0  :b10, 2024-05-26, 14d
+    Claiming Rewards          :b11, 2024-05-26, 14d
+    Funding Polls             :b12, 2024-05-26, 14d
+    View Result Beautification :b13, 2024-05-26, 14d
+    Poll Response Analysis    :b14, 2024-05-26, 14d
+    TBD                       :b15, 2024-06-09, 14d
+    TBD                       :b16, 2024-06-23, 14d
 ```
 
 ## Demo

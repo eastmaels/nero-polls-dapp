@@ -81,6 +81,7 @@
     "clsx": "^2.0.0",
     "cmdk": "1.0.4",
     "date-fns": "^2.30.0",
+    "dayjs": "^1.11.13",
     "embla-carousel-react": "8.5.1",
     "ethers": "5.7.2",
     "framer-motion": "latest",

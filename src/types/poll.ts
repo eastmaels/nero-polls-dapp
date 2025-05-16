@@ -6,6 +6,7 @@ export interface PollState {
   creator: string;
   subject: string;
   description: string;
+  status: string;
   createdAt: Date;
   options: string[];
   rewardPerResponse: number;
@@ -17,5 +18,12 @@ export interface PollState {
   minContribution: number;
   targetFund: number;
   responses: string[];
-  responsesWithAddress: any[];
+  responsesWithAddress: {
+    address: string;
+    response: string;
+    isClaimed: boolean;
+    weight: number;
+    timestamp: Date;
+    reward: number;
+  }[];
 }
