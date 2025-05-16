@@ -84,6 +84,8 @@ vercel build --prod
 vercel --prebuilt --prod
 ```
 
+`yarn build:demo && vercel build --prod && vercel --prebuilt --prod`
+
 ## 📄 License
 
 This project is distributed under the [MIT License](LICENSE).
