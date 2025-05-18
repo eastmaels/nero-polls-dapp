@@ -84,9 +84,9 @@ contract PollsDApp {
             creator: creator,
             subject: subject,
             description: description,
-            status: "open",
+            status: "new",
             options: options,
-            isOpen: true
+            isOpen: false
         });
     }
 
@@ -149,8 +149,6 @@ contract PollsDApp {
         uint256 pollId,
         string memory subject,
         string memory description,
-        bool isOpen,
-        string[] memory options,
         uint256 rewardPerResponse,
         uint256 durationDays,
         uint256 maxResponses,
@@ -161,7 +159,6 @@ contract PollsDApp {
 
         require(msg.sender == p.content.creator, "Not creator");
         require(!p.content.isOpen, "Already open");
-        require(options.length >= 2, "Min 2 options");
         require(durationDays > 0, "Invalid duration");
         require(minContribution > 0, "Min contribution > 0");
         require(targetFund >= minContribution, "Target >= min");
@@ -169,8 +166,6 @@ contract PollsDApp {
 
         p.content.subject = subject;
         p.content.description = description;
-        p.content.isOpen = isOpen;
-        p.content.options = options;
 
         p.settings.rewardPerResponse = rewardPerResponse;
         p.settings.maxResponses = maxResponses;

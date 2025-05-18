@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
-import { ERC20_ABI_DPOLLS, } from '@/constants/abi';
+import { POLLS_DAPP_ABI, } from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts'
 import { useSignature, useSendUserOp, useConfig } from '@/hooks';
 import { ethers } from 'ethers';
@@ -34,7 +34,7 @@ type Poll = {
 
 const NERO_POLL_ABI = [
   // Basic ERC721 functions from the standard ABI
-  ...ERC20_ABI_DPOLLS,
+  ...POLLS_DAPP_ABI,
   // Add the mint function that exists in the NeroNFT contract
   'function mint(address to, string memory uri) returns (uint256)',
   'function tokenURI(uint256 tokenId) view returns (string memory)',
@@ -213,7 +213,7 @@ export function GameProvider({ children, AAaddress, handleTabChange }:
       // Create a contract instance for the NFT contract
       const pollsContract = new ethers.Contract(
         CONTRACT_ADDRESSES.dpollsContract,
-        ERC20_ABI_DPOLLS,
+        POLLS_DAPP_ABI,
         provider
       );
       

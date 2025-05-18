@@ -4,7 +4,7 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 import { X } from "lucide-react"
 import { useSignature, useSendUserOp } from '@/hooks';
-import { ERC20_ABI_DPOLLS, } from '@/constants/abi';
+import { POLLS_DAPP_ABI, } from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts'
 import { Button } from 'antd';
 
@@ -19,7 +19,7 @@ interface PollLetterProps {
 
 const NERO_POLL_ABI = [
   // Basic ERC721 functions from the standard ABI
-  ...ERC20_ABI_DPOLLS,
+  ...POLLS_DAPP_ABI,
   // Add the mint function that exists in the NeroNFT contract
   'function mint(address to, string memory uri) returns (uint256)',
   'function tokenURI(uint256 tokenId) view returns (string memory)',

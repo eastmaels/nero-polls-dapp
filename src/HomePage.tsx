@@ -1,6 +1,6 @@
 import { useState, useContext, useEffect } from 'react';
 import { useSignature, useSendUserOp, useConfig, useEthersSigner } from '@/hooks';
-import { ERC20_ABI_DPOLLS,  } from '@/constants/abi';
+import { POLLS_DAPP_ABI,  } from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts'
 import { ClientContext } from '@/contexts'
 import { ethers } from 'ethers';
@@ -15,7 +15,7 @@ import { convertTimestampToDate } from '@/utils/format';
 // Define NeroNFT ABI with the mint function
 const NERO_POLL_ABI = [
   // Basic ERC721 functions from the standard ABI
-  ...ERC20_ABI_DPOLLS,
+  ...POLLS_DAPP_ABI,
   // Add the mint function that exists in the NeroNFT contract
   'function mint(address to, string memory uri) returns (uint256)',
   'function tokenURI(uint256 tokenId) view returns (string memory)',
@@ -154,7 +154,7 @@ const HomePage = () => {
       // Create a contract instance for the NFT contract
       const pollsContract = new ethers.Contract(
         CONTRACT_ADDRESSES.dpollsContract,
-        ERC20_ABI_DPOLLS,
+        POLLS_DAPP_ABI,
         provider
       );
       

@@ -204,16 +204,6 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
             <Input type="number" placeholder="Enter maximum number of responses" />
           </Form.Item>
           <Form.Item 
-            label="Duration (Days)"
-            name="durationDays"
-            rules={[
-              { required: true, message: 'Please enter duration' },
-            ]}
-            style={{ textAlign: 'center' }}
-          >
-            <Input type="number" placeholder="Enter poll duration in days" />
-          </Form.Item>
-          <Form.Item 
             label="Min Contribution"
             name="minContribution"
             rules={[

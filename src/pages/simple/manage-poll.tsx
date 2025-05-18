@@ -1,26 +1,29 @@
 "use client"
 
-import { useState } from "react"
-import { ERC20_ABI_DPOLLS,  } from '@/constants/abi';
+import { useEffect, useState } from "react"
+import { POLLS_DAPP_ABI,  } from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts'
 import { Trash2, PlusCircle, } from "lucide-react"
-import { DatePicker, DatePickerProps } from "antd";
+import { DatePicker, DatePickerProps, Switch } from "antd";
 import { Button, Form, Input, Card, Space } from 'antd';
 import { Steps } from 'antd';
+import dayjs from 'dayjs';
 import { useSignature, useSendUserOp } from "@/hooks";
 import { ethers } from 'ethers';
+import { MdOutlineKayaking } from "react-icons/md";
 interface ManagePollProps {
   poll: any;
 }
 
 interface PollOption {
   id: number;
+  key: number;
   text: string;
 }
 
 const NERO_POLL_ABI = [
   // Basic ERC721 functions from the standard ABI
-  ...ERC20_ABI_DPOLLS,
+  ...POLLS_DAPP_ABI,
   // Add the mint function that exists in the NeroNFT contract
   'function mint(address to, string memory uri) returns (uint256)',
   'function tokenURI(uint256 tokenId) view returns (string memory)',
@@ -42,18 +45,41 @@ export default function ManagePoll({ poll }: ManagePollProps) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [options, setOptions] = useState<PollOption[]>([]);
-  form.setFieldsValue({
+  
+  useEffect(() => {
+    const modOptions: PollOption[] = [];
+    poll.options.forEach((element: string, index: number) => {
+      modOptions.push({ id: index, key: index, text: element });
+    });
+    setOptions(modOptions);
+  }, []); 
+
+  console.log('options', options)
+  // form.setFieldsValue({
+  //   subject: poll.subject,
+  //   description: poll.description,
+  //   endDate: poll.endDate,
+  //   options: options,
+  //   settings: poll.settings,
+  //   rewardPerResponse: ethers.utils.formatEther(poll.rewardPerResponse),
+  //   maxResponses: ethers.utils.formatEther(poll.maxResponses),
+  //   targetFund: ethers.utils.formatEther(poll.targetFund | 0),
+  // });
+
+  const modPollForForm = {
     subject: poll.subject,
     description: poll.description,
     endDate: poll.endDate,
-    options: poll.options,
-    settings: poll.settings
-  });
+    //options: options,
+    //settings: poll.settings,
+    //rewardPerResponse: ethers.utils.formatEther(poll.rewardPerResponse),
+    //maxResponses: ethers.utils.formatEther(poll.maxResponses),
+    //targetFund: ethers.utils.formatEther(poll.targetFund | 0),
+  }
 
   const [current, setCurrent] = useState(0);
   const steps = [
     { title: 'Basic Info' },
-    { title: 'Options' },
     { title: 'Settings'}
   ];
 
@@ -69,7 +95,7 @@ export default function ManagePoll({ poll }: ManagePollProps) {
     setCurrent(current - 1);
   };
 
-  const handleUpdatePoll = async (pollForm: any) => {
+  const handleUpdatePoll = async () => {
     if (!isConnected) {
       alert('Please connect your wallet first');
       return;
@@ -80,19 +106,39 @@ export default function ManagePoll({ poll }: ManagePollProps) {
     setTxStatus('');
 
     try {
+      await form.validateFields();
+      const fieldsValue = form.getFieldsValue(true);
+      console.log('fieldsValue:', fieldsValue);
+
+      // Calculate duration in days
+      const endDate = fieldsValue.endDate?.toDate();
+      console.log('endDate:', endDate);
+      const currentDate = new Date();
+      const durationInMs = endDate.getTime() - currentDate.getTime();
+      const durationInDays = Math.ceil(durationInMs / (1000 * 60 * 60 * 24));
+
+      const pollData = {
+        ...fieldsValue,
+        //options: fieldsValue.options.map((item: any) => item.text),
+        options: poll.options,
+        endDate: endDate,
+        duration: durationInDays // Add the calculated duration
+      };
+      console.log('pollData', pollData)
+
       await execute({
-        function: 'createPoll',
+        function: 'updatePoll',
         contractAddress: CONTRACT_ADDRESSES.dpollsContract,
         abi: NERO_POLL_ABI, // Use the specific ABI with mint function
         params: [
-          pollForm.subject,
-          pollForm.description,
-          pollForm.options,
-          ethers.utils.parseEther(pollForm.rewardPerResponse).toString(),
-          parseInt(pollForm.duration),
-          parseInt(pollForm.maxResponses),
-          ethers.utils.parseEther(pollForm.minContribution).toString(),
-          ethers.utils.parseEther(pollForm.targetFund).toString(),
+          poll.id,
+          pollData.subject,
+          pollData.description,
+          ethers.utils.parseEther(pollData.rewardPerResponse).toString(),
+          parseInt(pollData.duration),
+          parseInt(pollData.maxResponses),
+          ethers.utils.parseEther(pollData.minContribution).toString(),
+          ethers.utils.parseEther(pollData.targetFund).toString(),
         ],
         value: 0,
       });
@@ -121,6 +167,7 @@ export default function ManagePoll({ poll }: ManagePollProps) {
         form={form}
         name="basicInfo"
         style={{ maxWidth: 600, margin: '0 auto' }}
+        initialValues={modPollForForm}
       >
 
         <Steps
@@ -159,61 +206,23 @@ export default function ManagePoll({ poll }: ManagePollProps) {
               picker="date"
               format="YYYY-MM-DD"
               style={{ width: '100%' }}
+              disabledDate={(current) => {
+                return current && current < dayjs().endOf('day');
+              }}
             />
           </Form.Item>
-        </Card>
-
-        {/* Options */}
-        <Card
-          // className={`steps-content ${current == 1 ? "" : "hidden"}`}
-          style={current == 1 ? {} : { display: "none" }}
-        >
-          <Form.List
-            name="options"
-            initialValue={options}
+          <Form.Item 
+            label="Is Open"
+            name="isOpen"
+            style={{ textAlign: 'center' }}
           >
-            {(fields, { add, remove }) => (
-              <>
-                {fields.map(({ key, name }) => (
-                  <Form.Item
-                    key={key}
-                    label={`Option ${name + 1}`}
-                    style={{ textAlign: 'center' }}
-                    name={[name, "text"]}
-                  >
-                    <Space.Compact style={{ width: '100%', justifyContent: 'center' }}>
-                      <Input
-                        placeholder={`Enter option ${name + 1}`} 
-                      />
-                      {fields.length > 2 && (
-                        <Button 
-                          type="text" 
-                          danger 
-                          icon={<Trash2 size={16} />}
-                          onClick={() => remove(name)}
-                        />
-                      )}
-                    </Space.Compact>
-                  </Form.Item>
-                ))}
-                <Form.Item style={{ textAlign: 'center' }}>
-                  <Button 
-                    type="dashed" 
-                    onClick={() => add({ text: "" })} 
-                    block 
-                    icon={<PlusCircle size={16} />}
-                  >
-                    Add Option
-                  </Button>
-                </Form.Item>
-              </>
-            )}
-          </Form.List>
+            <Switch disabled checkedChildren="Open" unCheckedChildren="Closed" defaultChecked={poll.isOpen} />
+          </Form.Item>
         </Card>
 
         {/* Settings */}
         <Card
-          style={current == 2 ? {} : { display: "none" }}
+          style={current == 1 ? {} : { display: "none" }}
         >
           <Form.Item 
             label="Reward per Response"
@@ -234,16 +243,6 @@ export default function ManagePoll({ poll }: ManagePollProps) {
             style={{ textAlign: 'center' }}
           >
             <Input type="number" placeholder="Enter maximum number of responses" />
-          </Form.Item>
-          <Form.Item 
-            label="Duration (Days)"
-            name="durationDays"
-            rules={[
-              { required: true, message: 'Please enter duration' },
-            ]}
-            style={{ textAlign: 'center' }}
-          >
-            <Input type="number" placeholder="Enter poll duration in days" />
           </Form.Item>
           <Form.Item 
             label="Min Contribution"
