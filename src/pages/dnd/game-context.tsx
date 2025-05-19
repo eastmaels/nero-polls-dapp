@@ -263,13 +263,12 @@ export function GameProvider({ children, AAaddress, handleTabChange }:
         );
 
         // Filter out any null values from failed fetches
-        const validPolls = fetchedPolls.filter(poll => poll !== null);
+        const validOpenPolls = fetchedPolls.filter(poll => poll !== null && poll.isOpen);
         
-        if (validPolls.length > 0) {
-          const notVotedPolls = validPolls.filter((poll) => !poll.responsesWithAddress.some((response: any) => response.address === AAaddress))
+        if (validOpenPolls.length > 0) {
+          const notVotedPolls = validOpenPolls.filter((poll) => !poll.responsesWithAddress.some((response: any) => response.address === AAaddress))
           console.log("notVotedPolls", notVotedPolls)
-          // FIXME: This is a temporary fix to get the polls to display
-          const convertedPolls: Poll[] = validPolls.map((poll, index) => ({
+          const convertedPolls: Poll[] = notVotedPolls.map((poll, index) => ({
             key: index,
             id: poll.id,
             position: { x: generateRandomPosition(30, 100), y: generateRandomPosition(30, 100) },

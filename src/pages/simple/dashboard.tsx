@@ -12,6 +12,8 @@ import { PlusCircle, Clock, Users } from "lucide-react"
 import { Button, Modal, Space } from 'antd';
 import ManagePoll from "@/pages/simple/manage-poll";
 import { PollState } from "@/types/poll";
+import { ethers } from 'ethers';
+import { getCompressedAddress } from "@/utils/addressUtil";
 
 const NERO_POLL_ABI = [
   // Basic ERC721 functions from the standard ABI
@@ -212,7 +214,54 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
 
   };
 
-  const handleDistributeRewards = async (poll: PollState) => {
+  const handleUpdatePoll = async (updatedPoll: any) => {
+    console.log('updatedPoll', updatedPoll)
+    if (!isConnected) {
+      alert('Please connect your wallet first');
+      return;
+    }
+
+    setIsLoading(true);
+    setUserOpHash(null);
+    setTxStatus('');
+
+    try {
+      await execute({
+        function: 'updatePoll',
+        contractAddress: CONTRACT_ADDRESSES.dpollsContract,
+        abi: NERO_POLL_ABI, // Use the specific ABI with mint function
+        params: [
+          updatedPoll.id,
+          updatedPoll.subject,
+          updatedPoll.description,
+          ethers.utils.parseEther(updatedPoll.rewardPerResponse).toString(),
+          parseInt(updatedPoll.duration),
+          parseInt(updatedPoll.maxResponses),
+          ethers.utils.parseEther(updatedPoll.minContribution).toString(),
+          ethers.utils.parseEther(updatedPoll.targetFund).toString(),
+        ],
+        value: 0,
+      });
+
+      const result = await waitForUserOpResult();
+      setUserOpHash(result.userOpHash);
+      setIsPolling(true);
+
+      if (result.result === true) {
+        setIsPolling(false);
+      } else if (result.transactionHash) {
+        setTxStatus('Transaction hash: ' + result.transactionHash);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setTxStatus('An error occurred');
+    } finally {
+      setIsLoading(false);
+      setIsManagePollModalOpen(false);
+    }
+  };
+
+  const handleClosedForDistribution = async (poll: PollState) => {
     console.log("Distributing rewards for poll:", poll);
     if (!isConnected) {
       alert('Please connect your wallet first');
@@ -225,7 +274,7 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
 
     try {
       await execute({
-        function: 'forClaiming',
+        function: 'closePollForDistribution',
         contractAddress: CONTRACT_ADDRESSES.dpollsContract,
         abi: NERO_POLL_ABI,
         params: [
@@ -461,8 +510,7 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
             Vote
             </Button>
           }
-          {((poll.status === "open" && type === "created")
-            || (poll.status === "new" && type === "created")) &&
+          {(poll.status === "new" && type === "created") &&
             <Button block variant="outlined" size="small" type="primary"
               onClick={() => setIsManagePollModalOpen(true)}>
               Manage
@@ -474,16 +522,16 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
                 Open
             </Button>
           }
-          {type === "created" && (poll.status === "open" || poll.status === "for-claiming") && 
+          {type === "created" && poll.status === "open" &&
+            <Button block variant="outlined" size="small" type="primary"
+              onClick={() => showDistributeRewardsModal()}>
+                Close For Distribution
+            </Button>
+          }
+          {type === "created" && poll.status === "for-claiming" && 
             <Button block variant="outlined" size="small" type="primary"
               onClick={() => showClosePollModal()}>
                 Close Poll
-            </Button>
-          }
-          {type === "created" && poll.status === "closed" &&
-            <Button block variant="outlined" size="small" type="primary"
-              onClick={() => showDistributeRewardsModal()}>
-                Distribute Rewards
             </Button>
           }
           {type === "voted" && poll.status === "for-claiming" &&
@@ -517,22 +565,16 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
       <Modal
         title={poll.subject || poll.title || poll.question}
         open={isManagePollModalOpen}
-        onOk={() => {
-          setIsManagePollModalOpen(false);
-          fetchPolls();
-        }}
-        onCancel={() => {
-          setIsManagePollModalOpen(false);
-        }}
         footer={null}
-        maskClosable={false}
+        onCancel={() => setIsManagePollModalOpen(false)}
       >
-        <ManagePoll poll={poll} />
+        <ManagePoll poll={poll} handleUpdatePoll={handleUpdatePoll} />
       </Modal>
       <Modal
         title={"Close Poll: " + poll.subject || poll.title || poll.question}
         open={isClosePollModalOpen}
         maskClosable={false}
+        onCancel={() => setIsClosePollModalOpen(false)}
         footer={[
           <Button key="submit" type="primary" loading={isLoading}
             onClick={() => {
@@ -552,6 +594,7 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
         title={"Open Poll: " + poll.subject || poll.title || poll.question}
         open={isOpenPollModalOpen}
         maskClosable={false}
+        onCancel={() => setIsOpenPollModalOpen(false)}
         footer={[
           <Button key="submit" type="primary" loading={isLoading}
             onClick={() => {
@@ -571,10 +614,11 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
         title={"Distribute Rewards for poll: " + poll.subject || poll.title || poll.question}
         open={isDistributeRewardsModalOpen}
         maskClosable={false}
+        onCancel={() => setIsDistributeRewardsModalOpen(false)}
         footer={[
           <Button key="submit" type="primary" loading={isLoading}
             onClick={() => {
-              handleDistributeRewards(poll);
+              handleClosedForDistribution(poll);
             }}>
             Yes
           </Button>,
@@ -590,6 +634,7 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
         title={"Claim Rewards for poll: " + poll.subject || poll.title || poll.question}
         open={isClaimModalOpen}
         maskClosable={false}
+        onCancel={() => setIsClaimModalOpen(false)}
         footer={[
           <Button key="submit" type="primary" loading={isLoading}
             onClick={() => {
@@ -622,9 +667,9 @@ function StatusBadge({ status }) {
         New
       </Badge>
     )
-  } else if (status === "ended") {
+  } else if (status === "closed") {
     return <Badge variant="secondary">Ended</Badge>
-  } else if (status === "pending") {
+  } else if (status === "for-claiming") {
     return (
       <Badge variant="outline" className="text-yellow-500 border-yellow-500">
         Pending
