@@ -1,18 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { POLLS_DAPP_ABI,  } from '@/constants/abi';
-import { CONTRACT_ADDRESSES } from '@/constants/contracts'
-import { Trash2, PlusCircle, } from "lucide-react"
 import { DatePicker, DatePickerProps, Switch } from "antd";
 import { Button, Form, Input, Card, Space } from 'antd';
 import { Steps } from 'antd';
 import dayjs from 'dayjs';
-import { useSignature, useSendUserOp } from "@/hooks";
-import { ethers } from 'ethers';
-import { MdOutlineKayaking } from "react-icons/md";
+
 interface ManagePollProps {
   poll: any;
+  handleUpdatePoll: (pollData: any) => Promise<void>;
 }
 
 interface PollOption {
@@ -21,29 +17,13 @@ interface PollOption {
   text: string;
 }
 
-const NERO_POLL_ABI = [
-  // Basic ERC721 functions from the standard ABI
-  ...POLLS_DAPP_ABI,
-  // Add the mint function that exists in the NeroNFT contract
-  'function mint(address to, string memory uri) returns (uint256)',
-  'function tokenURI(uint256 tokenId) view returns (string memory)',
-];
 const onChange: DatePickerProps['onChange'] = (date, dateString) => {
   console.log(date, dateString);
 };
 
-export default function ManagePoll({ poll }: ManagePollProps) {
-  console.log("poll", poll);
-
-  const { isConnected, } = useSignature();
-  const { execute, waitForUserOpResult, sendUserOp } = useSendUserOp();
-  const [userOpHash, setUserOpHash] = useState<string | null>(null);
-  const [txStatus, setTxStatus] = useState<string>('');
-  const [isPolling, setIsPolling] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
+export default function ManagePoll({ poll, handleUpdatePoll }: ManagePollProps) {
+   const [isLoading, setIsLoading] = useState(false);
   const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
   const [options, setOptions] = useState<PollOption[]>([]);
   
   useEffect(() => {
@@ -54,27 +34,10 @@ export default function ManagePoll({ poll }: ManagePollProps) {
     setOptions(modOptions);
   }, []); 
 
-  console.log('options', options)
-  // form.setFieldsValue({
-  //   subject: poll.subject,
-  //   description: poll.description,
-  //   endDate: poll.endDate,
-  //   options: options,
-  //   settings: poll.settings,
-  //   rewardPerResponse: ethers.utils.formatEther(poll.rewardPerResponse),
-  //   maxResponses: ethers.utils.formatEther(poll.maxResponses),
-  //   targetFund: ethers.utils.formatEther(poll.targetFund | 0),
-  // });
-
   const modPollForForm = {
     subject: poll.subject,
     description: poll.description,
     endDate: poll.endDate,
-    //options: options,
-    //settings: poll.settings,
-    //rewardPerResponse: ethers.utils.formatEther(poll.rewardPerResponse),
-    //maxResponses: ethers.utils.formatEther(poll.maxResponses),
-    //targetFund: ethers.utils.formatEther(poll.targetFund | 0),
   }
 
   const [current, setCurrent] = useState(0);
@@ -84,77 +47,35 @@ export default function ManagePoll({ poll }: ManagePollProps) {
   ];
 
   const next = async () => {
-    const fieldsValue = form.getFieldsValue(true);
-    console.log("next fieldsValue", fieldsValue);
     setCurrent(current + 1);
   };
 
   const prev = async () => {
-    const fieldsValue = form.getFieldsValue(true);
-    console.log("prev fieldsValue", fieldsValue);
     setCurrent(current - 1);
   };
 
-  const handleUpdatePoll = async () => {
-    if (!isConnected) {
-      alert('Please connect your wallet first');
-      return;
-    }
-
+  const handleUpdatePollLocal = async () => {
     setIsLoading(true);
-    setUserOpHash(null);
-    setTxStatus('');
-
     try {
       await form.validateFields();
       const fieldsValue = form.getFieldsValue(true);
-      console.log('fieldsValue:', fieldsValue);
 
       // Calculate duration in days
       const endDate = fieldsValue.endDate?.toDate();
-      console.log('endDate:', endDate);
       const currentDate = new Date();
       const durationInMs = endDate.getTime() - currentDate.getTime();
       const durationInDays = Math.ceil(durationInMs / (1000 * 60 * 60 * 24));
 
       const pollData = {
         ...fieldsValue,
-        //options: fieldsValue.options.map((item: any) => item.text),
+        id: poll.id,
         options: poll.options,
         endDate: endDate,
         duration: durationInDays // Add the calculated duration
       };
-      console.log('pollData', pollData)
-
-      await execute({
-        function: 'updatePoll',
-        contractAddress: CONTRACT_ADDRESSES.dpollsContract,
-        abi: NERO_POLL_ABI, // Use the specific ABI with mint function
-        params: [
-          poll.id,
-          pollData.subject,
-          pollData.description,
-          ethers.utils.parseEther(pollData.rewardPerResponse).toString(),
-          parseInt(pollData.duration),
-          parseInt(pollData.maxResponses),
-          ethers.utils.parseEther(pollData.minContribution).toString(),
-          ethers.utils.parseEther(pollData.targetFund).toString(),
-        ],
-        value: 0,
-      });
-
-      const result = await waitForUserOpResult();
-      setUserOpHash(result.userOpHash);
-      setIsPolling(true);
-
-      if (result.result === true) {
-        setIsPolling(false);
-      } else if (result.transactionHash) {
-        setTxStatus('Transaction hash: ' + result.transactionHash);
-      }
+      await handleUpdatePoll(pollData);
     } catch (error) {
       console.error('Error:', error);
-      setTxStatus('An error occurred');
     } finally {
       setIsLoading(false);
     }
@@ -280,8 +201,8 @@ export default function ManagePoll({ poll }: ManagePollProps) {
           {current === steps.length - 1 && (
             <Button
             type="primary"
-            onClick={handleUpdatePoll}
-            loading={loading}
+            onClick={handleUpdatePollLocal}
+            loading={isLoading}
             >
               Submit
             </Button>

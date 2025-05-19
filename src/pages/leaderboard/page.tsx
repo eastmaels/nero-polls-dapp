@@ -5,6 +5,7 @@ import { Card } from "@/components/ui_v2/card"
 import { Progress } from "@/components/ui_v2/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui_v2/tabs"
 import { PollState } from "@/types/poll";
+import { getCompressedAddress } from "@/utils/addressUtil";
 
 interface LeaderboardUser {
   id: number;
@@ -154,10 +155,6 @@ const getBadge = (pollsVoted: number) => {
   if (pollsVoted >= 200) return "Gold";
   if (pollsVoted >= 150) return "Silver";
   return "Bronze";
-}
-
-const getCompressedAddress = (address: string) => {
-  return address.slice(0, 6) + "..." + address.slice(-4);
 }
 
 export default function LeaderboardPage( {AAaddress, polls, fetchPolls}: {AAaddress: string, polls: PollState[], fetchPolls: () => void } ) {
