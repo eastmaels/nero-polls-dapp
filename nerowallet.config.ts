@@ -26,7 +26,7 @@ const config = {
         },
       },
       aa: {
-        bundler: 'https://bundler.service.nerochain.io',
+        bundler: 'https://bundler-testnet.nerochain.io',
         paymaster: 'https://paymaster-testnet.nerochain.io',
         paymasterAPIKey: import.meta.env.VITE_TESTNET_PAYMASTER_API ?? '',
       },
