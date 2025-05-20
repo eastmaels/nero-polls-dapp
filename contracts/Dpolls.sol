@@ -194,7 +194,7 @@ contract PollsDApp {
         p.settings.totalResponses++;
     }
 
-    function closePollForDistribution(uint256 pollId) external payable {
+    function closePoll(uint256 pollId) external payable {
         Poll storage p = polls[pollId];
         require(msg.sender == p.content.creator, "Not creator");
         require(p.content.isOpen, "Already closed");
@@ -229,7 +229,6 @@ contract PollsDApp {
     function forClaiming(uint256 pollId) external payable {
         Poll storage p = polls[pollId];
         require(msg.sender == p.content.creator, "Not creator");
-        require(keccak256(bytes(p.content.status)) == keccak256(bytes("closed")), "Not closed");
 
         p.content.status = "for-claiming";
         emit PollUpdated(pollId, msg.sender, p.content.subject);
