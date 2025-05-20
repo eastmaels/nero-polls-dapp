@@ -19,7 +19,7 @@ export const POLLS_DAPP_ABI = [
   'function createPoll(string subject, string description, string[] options, uint256 rewardPerResponse, uint256 durationDays, uint256 maxResponses, uint256 minContribution, uint256 targetFund) external payable',
   'function updatePoll(uint256 pollId, string subject, string description, uint256 rewardPerResponse, uint256 durationDays, uint256 maxResponses, uint256 minContribution, uint256 targetFund) external payable',
   'function submitResponse(uint256 pollId, string response) external payable',
-  'function closePollForDistribution(uint256 pollId) external payable',
+  'function closePoll(uint256 pollId) external payable',
   'function cancelPoll(uint256 pollId) external payable',
   'function openPoll(uint256 pollId) external payable',
   'function forClaiming(uint256 pollId) external payable',

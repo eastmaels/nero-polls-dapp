@@ -28,7 +28,7 @@ export default function Dashboard({ AAaddress, handleTabChange, polls, fetchPoll
   const [activeTab, setActiveTab] = useState("active")
 
   // Filter polls based on their status
-  const activePolls = polls.filter(poll => poll.isOpen && (poll.status === "open" || poll.status === "new"))
+  const activePolls = polls.filter(poll => poll.isOpen && (poll.status === "open" || poll.status === "new" || poll.status === "for-claiming"))
   const createdPolls = polls.filter(poll => poll.creator === AAaddress)
   const votedPolls = polls.filter(poll => poll.responsesWithAddress?.some(response => response.address === AAaddress)) // Assuming there's a voted flag
 
@@ -149,11 +149,11 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
 
   const [isLoading, setIsLoading] = useState(false);
   const isClaimed = poll.responsesWithAddress?.some(response => response.address === AAaddress && response.isClaimed);
-  const [isDistributeRewardsModalOpen, setIsDistributeRewardsModalOpen] = useState(false);
+  const [isForClaimingModalOpen, setIsForClaimingModalOpen] = useState(false);
   const [votedOption, setVotedOption] = useState<string | null>(null);
 
   const showDistributeRewardsModal = () => {
-    setIsDistributeRewardsModalOpen(true);
+    setIsForClaimingModalOpen(true);
   };
 
   const showClaimModal = () => {
@@ -261,8 +261,8 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
     }
   };
 
-  const handleClosedForDistribution = async (poll: PollState) => {
-    console.log("Distributing rewards for poll:", poll);
+  const handleOpenForClaiming = async (poll: PollState) => {
+    console.log("Open claims for poll:", poll);
     if (!isConnected) {
       alert('Please connect your wallet first');
       return;
@@ -274,7 +274,7 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
 
     try {
       await execute({
-        function: 'closePollForDistribution',
+        function: 'forClaiming',
         contractAddress: CONTRACT_ADDRESSES.dpollsContract,
         abi: NERO_POLL_ABI,
         params: [
@@ -298,7 +298,7 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
       setTxStatus('An error occurred');
     } finally {
       setIsLoading(false);
-      setIsDistributeRewardsModalOpen(false);
+      setIsForClaimingModalOpen(false);
     }
   };
 
@@ -354,7 +354,7 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
 
     try {
       await execute({
-        function: 'closePollForDistribution',
+        function: 'closePoll',
         contractAddress: CONTRACT_ADDRESSES.dpollsContract,
         abi: NERO_POLL_ABI,
         params: [
@@ -391,7 +391,7 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
 
     try {
       await execute({
-        function: 'closePollForDistribution',
+        function: 'claimReward',
         contractAddress: CONTRACT_ADDRESSES.dpollsContract,
         abi: NERO_POLL_ABI,
         params: [
@@ -415,7 +415,7 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
       setTxStatus('An error occurred');
     } finally {
       setIsLoading(false);
-      setIsClosePollModalOpen(false);
+      setIsClaimModalOpen(false);
     }
   };
 
@@ -525,7 +525,7 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
           {type === "created" && poll.status === "open" &&
             <Button block variant="outlined" size="small" type="primary"
               onClick={() => showDistributeRewardsModal()}>
-                Close For Distribution
+                For Rewards Claim
             </Button>
           }
           {type === "created" && poll.status === "for-claiming" && 
@@ -536,6 +536,7 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
           }
           {type === "voted" && poll.status === "for-claiming" &&
             <Button block variant="outlined" size="small" type="primary"
+              disabled={isClaimed}
               onClick={() => showClaimModal()}>
                 Claim
             </Button>
@@ -611,19 +612,19 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
       >
       </Modal>
       <Modal
-        title={"Distribute Rewards for poll: " + poll.subject || poll.title || poll.question}
-        open={isDistributeRewardsModalOpen}
+        title={"Start Claims for: " + poll.subject || poll.title || poll.question}
+        open={isForClaimingModalOpen}
         maskClosable={false}
-        onCancel={() => setIsDistributeRewardsModalOpen(false)}
+        onCancel={() => setIsForClaimingModalOpen(false)}
         footer={[
           <Button key="submit" type="primary" loading={isLoading}
             onClick={() => {
-              handleClosedForDistribution(poll);
+              handleOpenForClaiming(poll);
             }}>
             Yes
           </Button>,
           <Button key="back" variant="outlined" onClick={() => {
-            setIsDistributeRewardsModalOpen(false);
+            setIsForClaimingModalOpen(false);
           }}>
             No
           </Button>,
@@ -672,7 +673,7 @@ function StatusBadge({ status }) {
   } else if (status === "for-claiming") {
     return (
       <Badge variant="outline" className="text-yellow-500 border-yellow-500">
-        Pending
+        For Claiming
       </Badge>
     )
   }
