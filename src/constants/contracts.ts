@@ -6,7 +6,7 @@ export const CONTRACT_ADDRESSES = {
   multiCall: "0x343A0DdD8e58bEaf29d69936c82F1516C6677B0E",
   // This would be your deployed NFT contract address
   nftContract: "0x63f1f7c6a24294a874d7c8ea289e4624f84b48cb",
-  dpollsContract: "0xb9fd7d36Bca0168Da5913b0DDB629E99e4f68B9E",
+  dpollsContract: "0x5A0d2578bED0ade2164eAb03Edf91b1E298f6982",
   testTokenContract: "0xA919e465871871F2D1da94BccAF3acaF9609D968" // TestToken contract address
 };
 

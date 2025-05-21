@@ -234,6 +234,14 @@ contract PollsDApp {
         emit PollUpdated(pollId, msg.sender, p.content.subject);
     }
 
+    function forFunding(uint256 pollId) external payable {
+        Poll storage p = polls[pollId];
+        require(msg.sender == p.content.creator, "Not creator");
+
+        p.content.status = "for-funding";
+        emit PollUpdated(pollId, msg.sender, p.content.subject);
+    }
+
     function getOptions(uint256 pollId) external view returns (string[] memory) {
         return polls[pollId].content.options;
     }
@@ -314,7 +322,7 @@ contract PollsDApp {
 
     function fundPoll(uint256 pollId) external payable nonReentrant {
         Poll storage p = polls[pollId];
-        require(p.content.isOpen, "Not open");
+        require(keccak256(bytes(p.content.status)) == keccak256(bytes("for-funding")), "Not funding");
         require(msg.value >= p.settings.minContribution, "Below min");
         require(p.settings.funds + msg.value <= p.settings.targetFund, "Exceeds target");
         
