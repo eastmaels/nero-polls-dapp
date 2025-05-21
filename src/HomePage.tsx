@@ -1,8 +1,7 @@
 import { useState, useContext, useEffect } from 'react';
-import { useSignature, useSendUserOp, useConfig, useEthersSigner } from '@/hooks';
+import { useSignature, useSendUserOp, useConfig, } from '@/hooks';
 import { POLLS_DAPP_ABI,  } from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts'
-import { ClientContext } from '@/contexts'
 import { ethers } from 'ethers';
 import Dashboard from "@/pages/simple/dashboard"
 import CreatePoll from "@/pages/simple/create-poll"
@@ -23,11 +22,10 @@ const NERO_POLL_ABI = [
 
 const HomePage = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeDashboardTab, setActiveDashboardTab] = useState('active');
   const { AAaddress, isConnected, simpleAccountInstance } = useSignature();
   const [isVoting, setIsVoting] = useState(false);
 
-  const client = useContext(ClientContext);
-  const signer = useEthersSigner()
   const { execute, waitForUserOpResult, sendUserOp } = useSendUserOp();
   const config = useConfig(); // Get config to access RPC URL
   const [isLoading, setIsLoading] = useState(false);
@@ -98,6 +96,7 @@ const HomePage = () => {
       setTxStatus('An error occurred');
     } finally {
       setIsLoading(false);
+      setActiveDashboardTab("created");
     }
   };
 
@@ -282,6 +281,7 @@ const HomePage = () => {
           handleTabChange={handleTabChange}
           polls={polls}
           fetchPolls={fetchPolls}
+          activeDashboardTab={activeDashboardTab}
         />
       )}
       {activeTab === 'leaderboard' && (

@@ -37,14 +37,10 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
   ];
 
   const next = async () => {
-    const fieldsValue = form.getFieldsValue(true);
-    console.log("next fieldsValue", fieldsValue);
     setCurrent(current + 1);
   };
 
   const prev = async () => {
-    const fieldsValue = form.getFieldsValue(true);
-    console.log("prev fieldsValue", fieldsValue);
     setCurrent(current - 1);
   };
 
@@ -186,6 +182,7 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
           <Form.Item 
             label="Reward per Response"
             name="rewardPerResponse"
+            tooltip="(in NERO units)"
             rules={[
               { required: true, message: 'Please enter reward amount' },
             ]}
@@ -206,6 +203,7 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
           <Form.Item 
             label="Min Contribution"
             name="minContribution"
+            tooltip="(in NERO units)"
             rules={[
               { required: true, message: 'Please enter minimum contribution' },
             ]}
@@ -216,6 +214,7 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
           <Form.Item 
             label="Target Fund"
             name="targetFund"
+            tooltip="(in NERO units)"
             rules={[
               { required: true, message: 'Please enter target fund' },
             ]}

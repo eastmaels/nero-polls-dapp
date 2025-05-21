@@ -8,12 +8,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui_v2/tabs"
 import { Badge } from "@/components/ui_v2/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui_v2/avatar"
-import { PlusCircle, Clock, Users } from "lucide-react"
-import { Button, Modal, Space } from 'antd';
+import { PlusCircle, Clock, Users, CircleDollarSign } from "lucide-react"
+import { Button, Form, Modal, Space, Input } from 'antd';
 import ManagePoll from "@/pages/simple/manage-poll";
 import { PollState } from "@/types/poll";
 import { ethers } from 'ethers';
-import { getCompressedAddress } from "@/utils/addressUtil";
+import { getSigner, fundPoll } from '@/utils/aaUtils';
 
 const NERO_POLL_ABI = [
   // Basic ERC721 functions from the standard ABI
@@ -23,14 +23,28 @@ const NERO_POLL_ABI = [
   'function tokenURI(uint256 tokenId) view returns (string memory)',
 ];
 
-export default function Dashboard({ AAaddress, handleTabChange, polls, fetchPolls }: 
-  { AAaddress: string, handleTabChange: (tab: string) => void, polls: PollState[], fetchPolls: () => void }) {
-  const [activeTab, setActiveTab] = useState("active")
+export default function Dashboard({ AAaddress, handleTabChange, polls, fetchPolls, activeDashboardTab }: 
+  { AAaddress: string, handleTabChange: (tab: string) => void, polls: PollState[], fetchPolls: () => void, activeDashboardTab: string }) {
+  const [activeTab, setActiveTab] = useState(activeDashboardTab || "active");
+  const config = useConfig(); // Get config to access RPC URL
 
   // Filter polls based on their status
   const activePolls = polls.filter(poll => poll.isOpen && (poll.status === "open" || poll.status === "new" || poll.status === "for-claiming"))
   const createdPolls = polls.filter(poll => poll.creator === AAaddress)
   const votedPolls = polls.filter(poll => poll.responsesWithAddress?.some(response => response.address === AAaddress)) // Assuming there's a voted flag
+  const fundingPolls = polls.filter(poll => poll.status === "for-funding")
+
+  const handleFundPoll = async (poll: any, amount: any) => {
+    console.log("poll", poll);
+    console.log("amount", amount);
+
+    const ethAmount = ethers.utils.parseEther(amount);
+
+    // Get signer from browser wallet
+    const signer = await getSigner();
+    const result = await fundPoll(signer, poll.id, ethAmount);
+    console.log('result', result)
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -39,7 +53,7 @@ export default function Dashboard({ AAaddress, handleTabChange, polls, fetchPoll
         </div>
 
         <div className="flex items-center gap-4">
-          <Button variant="outline" className="gap-2">
+          <Button variant="outlined" className="gap-2">
             <span className="h-2 w-2 rounded-full bg-green-500"></span>
             Connected: {AAaddress ? AAaddress.slice(0, 6) + "..." + AAaddress.slice(-4) : "Not Connected"}
           </Button>
@@ -50,11 +64,12 @@ export default function Dashboard({ AAaddress, handleTabChange, polls, fetchPoll
         </div>
       </div>
 
-      <Tabs defaultValue="active" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-3 w-full max-w-md mb-8">
+      <Tabs defaultValue={activeTab} className="w-full" onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-4 w-full max-w-md mb-8">
           <TabsTrigger value="active">Active Polls</TabsTrigger>
           <TabsTrigger value="created">My Polls</TabsTrigger>
           <TabsTrigger value="voted">Voted</TabsTrigger>
+          <TabsTrigger value="funding">Funding</TabsTrigger>
         </TabsList>
 
         <TabsContent value="active" className="space-y-4">
@@ -110,6 +125,24 @@ export default function Dashboard({ AAaddress, handleTabChange, polls, fetchPoll
             )}
           </div>
         </TabsContent>
+
+        <TabsContent value="funding" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {fundingPolls.map((poll) => (
+              <PollCard 
+                key={poll.id} poll={poll} type="funding" 
+                fetchPolls={fetchPolls}
+                AAaddress={AAaddress}
+                handleFundPoll={(poll, amount) => handleFundPoll(poll, amount)}
+              />
+            ))}
+            {fundingPolls.length === 0 && (
+              <div className="col-span-3 text-center py-10">
+                <p className="text-gray-500">No polls are currently open for funding</p>
+              </div>
+            )}
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   )
@@ -131,8 +164,8 @@ function calculateTimeLeft(endTime: string | Date): string {
 }
 
 
-function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }: 
-  { poll: any, type: string, fetchPolls: () => void, handleTabChange?: (tab: string) => void, AAaddress?: string }) {
+function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress, handleFundPoll }: 
+  { poll: any, type: string, fetchPolls: () => void, handleTabChange?: (tab: string) => void, AAaddress?: string, handleFundPoll?: (poll: any, amount: any) => void, }) {
   
   const { isConnected, } = useSignature();
   const { execute, waitForUserOpResult, sendUserOp } = useSendUserOp();
@@ -141,36 +174,20 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
   const [isPolling, setIsPolling] = useState(false);
   const [isVoting, setIsVoting] = useState(false);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
   const [isManagePollModalOpen, setIsManagePollModalOpen] = useState(false);
   const [isOpenPollModalOpen, setIsOpenPollModalOpen] = useState(false);
   const [isClosePollModalOpen, setIsClosePollModalOpen] = useState(false);
   const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
+  const [isOpenForFundingModalOpen, setIsOpenForFundingModalOpen] = useState(false);
+  const [isFundingModalOpen, setIsFundingModalOpen] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
   const isClaimed = poll.responsesWithAddress?.some(response => response.address === AAaddress && response.isClaimed);
   const [isForClaimingModalOpen, setIsForClaimingModalOpen] = useState(false);
   const [votedOption, setVotedOption] = useState<string | null>(null);
 
-  const showDistributeRewardsModal = () => {
-    setIsForClaimingModalOpen(true);
-  };
-
-  const showClaimModal = () => {
-    setIsClaimModalOpen(true);
-  };
-
-  const showClosePollModal = () => {
-    setIsClosePollModalOpen(true);
-  };
-
-  const showModal = () => {
-    setIsModalOpen(true);
-  };
-
-  const handleCancel = () => {
-    setIsModalOpen(false);
-  };
+  const [form] = Form.useForm();
 
   const handleOptionVote = async (option) => {
     if (!isConnected) {
@@ -209,13 +226,12 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
       setTxStatus('An error occurred');
     } finally {
       setIsVoting(false);
-      setIsModalOpen(false);
+      setIsVoteModalOpen(false);
     }
 
   };
 
   const handleUpdatePoll = async (updatedPoll: any) => {
-    console.log('updatedPoll', updatedPoll)
     if (!isConnected) {
       alert('Please connect your wallet first');
       return;
@@ -262,7 +278,6 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
   };
 
   const handleOpenForClaiming = async (poll: PollState) => {
-    console.log("Open claims for poll:", poll);
     if (!isConnected) {
       alert('Please connect your wallet first');
       return;
@@ -303,7 +318,6 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
   };
 
   const handleOpenPoll = async (poll: PollState) => {
-    console.log("Opening poll:", poll);
     if (!isConnected) {
       alert('Please connect your wallet first');
       return;
@@ -343,7 +357,6 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
   };
 
   const handleClosePoll = async (poll: PollState) => {
-    console.log("Closing poll:", poll);
     if (!isConnected) {
       alert('Please connect your wallet first');
       return;
@@ -378,12 +391,48 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
       setTxStatus('An error occurred');
     } finally {
       setIsLoading(false);
-      setIsClosePollModalOpen(false);
+    }
+  };
+
+  const handlePollStatusChange = async (poll: PollState, method: string) => {
+    if (!isConnected) {
+      alert('Please connect your wallet first');
+      return;
+    }
+    setIsLoading(true);
+    setUserOpHash(null);
+    setTxStatus('');
+
+    try {
+      await execute({
+        function: method,
+        contractAddress: CONTRACT_ADDRESSES.dpollsContract,
+        abi: NERO_POLL_ABI,
+        params: [
+          poll.id,
+        ],
+        value: 0,
+      });
+
+      const result = await waitForUserOpResult();
+      setUserOpHash(result.userOpHash);
+      setIsPolling(true);
+
+      if (result.result === true) {
+        setIsPolling(false);
+        fetchPolls();
+      } else if (result.transactionHash) {
+        setTxStatus('Transaction hash: ' + result.transactionHash);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setTxStatus('An error occurred');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleClaimRewards = async (poll) => {
-    console.log("Claiming rewards for poll:", poll);
     if (!isConnected) {
       alert('Please connect your wallet first');
       return;
@@ -419,6 +468,50 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
     }
   };
 
+  const handleFundPollLocal = async (poll) => {
+    if (!isConnected) {
+      alert('Please connect your wallet first');
+      return;
+    }
+
+    setIsLoading(true);
+    setUserOpHash(null);
+    setTxStatus('');
+
+    const amount = form.getFieldValue("contribution");
+    const ethAmount = ethers.utils.parseEther(amount);
+
+    try {
+      await execute({
+        function: 'fundPoll',
+        contractAddress: CONTRACT_ADDRESSES.dpollsContract,
+        abi: NERO_POLL_ABI, // Use the specific ABI with mint function
+        params: [
+          poll.id,
+        ],
+        value: ethAmount,
+      });
+
+      const result = await waitForUserOpResult();
+      setUserOpHash(result.userOpHash);
+      setIsPolling(true);
+
+      if (result.result === true) {
+        setIsPolling(false);
+        fetchPolls();
+      } else if (result.transactionHash) {
+        setTxStatus('Transaction hash: ' + result.transactionHash);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setTxStatus('An error occurred');
+    } finally {
+      setIsLoading(false);
+      setIsFundingModalOpen(false);
+    }
+
+  };
+
   const computePercentage = (responses: string[], option: string) => {
     if (responses?.length === 0) {
       return 0;
@@ -448,6 +541,12 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
           <span className="mx-1">•</span>
           <Users className="h-4 w-4" />
           <span>{poll.totalResponses} / {poll.maxResponses} votes</span>
+          {type === "created" &&
+            <>
+              <CircleDollarSign className="h-4 w-4" />
+              <span>{ethers.utils.formatEther(poll.funds || '0')} NERO </span>
+            </>
+          }
         </div>
 
         <div className="space-y-2">
@@ -504,7 +603,7 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
             <Button
               // variant={type === "voted" ? "outline" : "default"} size="sm" className="text-white"
               block
-              onClick={showModal}
+              onClick={() => setIsVoteModalOpen(true)}
               type="primary"
             >
             Vote
@@ -518,35 +617,47 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
           }
           {poll.status === "new" && type === "created" &&
             <Button block variant="outlined" size="small" type="primary" 
+              onClick={() => setIsOpenForFundingModalOpen(true)}>
+                Open For Funding
+            </Button>
+          }
+          {poll.status === "for-funding" && type === "created" &&
+            <Button block variant="outlined" size="small" type="primary" 
               onClick={() => setIsOpenPollModalOpen(true)}>
-                Open
+                Open For Voting
             </Button>
           }
           {type === "created" && poll.status === "open" &&
             <Button block variant="outlined" size="small" type="primary"
-              onClick={() => showDistributeRewardsModal()}>
+              onClick={() => setIsForClaimingModalOpen(true)}>
                 For Rewards Claim
             </Button>
           }
           {type === "created" && poll.status === "for-claiming" && 
             <Button block variant="outlined" size="small" type="primary"
-              onClick={() => showClosePollModal()}>
+              onClick={() => setIsClosePollModalOpen(true)}>
                 Close Poll
             </Button>
           }
           {type === "voted" && poll.status === "for-claiming" &&
             <Button block variant="outlined" size="small" type="primary"
               disabled={isClaimed}
-              onClick={() => showClaimModal()}>
+              onClick={() => setIsClaimModalOpen(true)}>
                 Claim
+            </Button>
+          }
+          {(type === "created" || type === "funding") && poll.status === "for-funding" &&
+            <Button block variant="outlined" size="small" type="primary"
+              onClick={() => setIsFundingModalOpen(true)}>
+                Fund
             </Button>
           }
         </div>
       </CardFooter>
       <Modal
         title={poll.subject || poll.title || poll.question}
-        open={isModalOpen}
-        onCancel={handleCancel}
+        open={isVoteModalOpen}
+        onCancel={() => setIsVoteModalOpen(false)}
         footer={null}
         maskClosable={false}
       >
@@ -578,8 +689,9 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
         onCancel={() => setIsClosePollModalOpen(false)}
         footer={[
           <Button key="submit" type="primary" loading={isLoading}
-            onClick={() => {
-              handleClosePoll(poll);
+            onClick={async () => {
+              await handleClosePoll(poll);
+              setIsClosePollModalOpen(false);
             }}>
             Yes
           </Button>,
@@ -651,6 +763,87 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress }:
         ]}
       >
       </Modal>
+
+      <Modal
+        title={"Open poll for funding: " + poll.subject || poll.title || poll.question}
+        open={isOpenForFundingModalOpen}
+        maskClosable={false}
+        onCancel={() => setIsOpenForFundingModalOpen(false)}
+        footer={[
+          <Button key="submit" type="primary" loading={isLoading}
+            onClick={async () => {
+              await handlePollStatusChange(poll, "forFunding");
+              setIsOpenForFundingModalOpen(false);
+            }}>
+            Yes
+          </Button>,
+          <Button key="back" variant="outlined" loading={isLoading} onClick={() => {
+            setIsOpenForFundingModalOpen(false);
+          }}>
+            No
+          </Button>,
+        ]}
+      >
+      </Modal>
+
+      <Modal
+        title={"Close Poll: " + poll.subject || poll.title || poll.question}
+        open={isClosePollModalOpen}
+        maskClosable={false}
+        onCancel={() => setIsClosePollModalOpen(false)}
+        footer={[
+          <Button key="submit" type="primary" loading={isLoading}
+            onClick={async () => {
+              await handleClosePoll(poll);
+            }}>
+            Yes
+          </Button>,
+          <Button key="back" variant="outlined" loading={isLoading} onClick={() => {
+            setIsClosePollModalOpen(false);
+          }}>
+            No
+          </Button>,
+        ]}
+      >
+      </Modal>
+
+      <Modal
+        title={"Fund poll: " + poll.subject || poll.title || poll.question}
+        open={isFundingModalOpen}
+        maskClosable={false}
+        onCancel={() => setIsFundingModalOpen(false)}
+        footer={[
+          <Button key="submit" type="primary" loading={isLoading}
+            onClick={async () => {
+              await handleFundPollLocal(poll);
+              setIsFundingModalOpen(false);
+            }}>
+            Yes
+          </Button>,
+          <Button key="back" variant="outlined" loading={isLoading} onClick={() => {
+            setIsFundingModalOpen(false);
+          }}>
+            No
+          </Button>,
+        ]}
+      >
+        <Form
+          layout={"horizontal"}
+          form={form}
+          name="basicInfo"
+          style={{ maxWidth: 600, margin: '0 auto' }}
+        >
+          {/* <div style={contentStyle}>{stepItems[current].content}</div> */}
+          <Form.Item 
+            label="Fund"
+            name="contribution"
+            rules={[{ required: true, message: 'Please enter amount to contribute' }]}
+            style={{ textAlign: 'center' }}
+          >
+            <Input placeholder="Amount in ETH" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </Card>
   )
 }
@@ -666,6 +859,12 @@ function StatusBadge({ status }) {
     return (
       <Badge variant="default" className="bg-blue-500">
         New
+      </Badge>
+    )
+  } else if (status === "for-funding") {
+    return (
+      <Badge variant="default" className="bg-blue-500">
+        Funding
       </Badge>
     )
   } else if (status === "closed") {
