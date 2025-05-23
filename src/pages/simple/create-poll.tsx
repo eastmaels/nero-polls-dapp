@@ -9,7 +9,7 @@ import dayjs from 'dayjs';
 
 interface CreatePollProps {
   handleCreatePoll: (pollData: any) => Promise<void>;
-  handleTabChange: (tab: string) => void;
+  handleTabChange?: (tab: string) => void;
 }
 
 interface PollOption {
