@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
 /// @title PollsDApp
 /// @notice A decentralized polling application
 /// @dev Optimized for contract size
-contract PollsDApp {
+contract PollsDApp is Ownable {
     // Reentrancy Guard
     bool private locked;
     
@@ -13,6 +16,35 @@ contract PollsDApp {
         locked = true;
         _;
         locked = false;
+    }
+
+    // Whitelist for allowed ERC20 tokens
+    mapping(address => bool) public whitelistedTokens;
+    address public nativeToken; // Address(0) for native ETH
+
+    event TokenWhitelisted(address token);
+    event TokenRemoved(address token);
+    event NativeTokenSet(address token);
+
+    constructor() Ownable(msg.sender) {
+        nativeToken = address(0); // Default to native ETH
+    }
+
+    function whitelistToken(address token) external onlyOwner {
+        require(token != address(0), "Invalid token");
+        whitelistedTokens[token] = true;
+        emit TokenWhitelisted(token);
+    }
+
+    function removeToken(address token) external onlyOwner {
+        whitelistedTokens[token] = false;
+        emit TokenRemoved(token);
+    }
+
+    function setNativeToken(address token) external onlyOwner {
+        require(token != address(0), "Invalid token");
+        nativeToken = token;
+        emit NativeTokenSet(token);
     }
 
     struct PollResponse {
@@ -33,6 +65,7 @@ contract PollsDApp {
         uint256 endTime;
         uint256 totalResponses;
         uint256 funds;
+        address rewardToken; // Address of the ERC20 token for rewards
     }
 
     struct PollContent {
@@ -58,10 +91,14 @@ contract PollsDApp {
         string[] options;
         uint256 rewardPerResponse;
         uint256 maxResponses;
+        uint256 durationDays;
+        uint256 minContribution;
+        uint256 targetFund;
         uint256 endTime;
         bool isOpen;
         uint256 totalResponses;
         uint256 funds;
+        address rewardToken;
     }
 
     uint256 public pollCounter;
@@ -95,8 +132,10 @@ contract PollsDApp {
         uint256 durationDays,
         uint256 maxResponses,
         uint256 minContribution,
-        uint256 targetFund
+        uint256 targetFund,
+        address rewardToken
     ) private view returns (PollSettings memory) {
+        require(rewardToken == address(0) || whitelistedTokens[rewardToken], "Token not whitelisted");
         return PollSettings({
             rewardPerResponse: rewardPerResponse,
             maxResponses: maxResponses,
@@ -105,7 +144,8 @@ contract PollsDApp {
             targetFund: targetFund,
             endTime: block.timestamp + (durationDays * 1 days),
             totalResponses: 0,
-            funds: 0
+            funds: 0,
+            rewardToken: rewardToken
         });
     }
 
@@ -117,13 +157,15 @@ contract PollsDApp {
         uint256 durationDays,
         uint256 maxResponses,
         uint256 minContribution,
-        uint256 targetFund
+        uint256 targetFund,
+        address rewardToken
     ) external payable {
         require(options.length >= 2, "Min 2 options");
         require(durationDays > 0, "Invalid duration");
         require(minContribution > 0, "Min contribution > 0");
         require(targetFund >= minContribution, "Target >= min");
         require(targetFund >= rewardPerResponse * maxResponses, "Target >= rewards");
+        require(rewardToken == address(0) || whitelistedTokens[rewardToken], "Token not whitelisted");
 
         PollContent memory content = _initializePollContent(msg.sender, subject, description, options);
         PollSettings memory settings = _initializePollSettings(
@@ -131,7 +173,8 @@ contract PollsDApp {
             durationDays,
             maxResponses,
             minContribution,
-            targetFund
+            targetFund,
+            rewardToken
         );
 
         Poll storage p = polls[pollCounter];
@@ -158,7 +201,7 @@ contract PollsDApp {
         Poll storage p = polls[pollId];
 
         require(msg.sender == p.content.creator, "Not creator");
-        require(!p.content.isOpen, "Already open");
+        require(keccak256(bytes(p.content.status)) == keccak256(bytes("new")), "Not new");
         require(durationDays > 0, "Invalid duration");
         require(minContribution > 0, "Min contribution > 0");
         require(targetFund >= minContribution, "Target >= min");
@@ -219,6 +262,7 @@ contract PollsDApp {
         Poll storage p = polls[pollId];
         require(msg.sender == p.content.creator, "Not creator");
         require(!p.content.isOpen, "Already open");
+        require(p.settings.funds >= p.settings.targetFund, "Target not reached");
 
         p.content.isOpen = true;
         p.content.status = "open";
@@ -266,10 +310,14 @@ contract PollsDApp {
             options: p.content.options,
             rewardPerResponse: p.settings.rewardPerResponse,
             maxResponses: p.settings.maxResponses,
+            durationDays: p.settings.durationDays,
+            minContribution: p.settings.minContribution,
+            targetFund: p.settings.targetFund,
             endTime: p.settings.endTime,
             isOpen: p.content.isOpen,
             totalResponses: p.settings.totalResponses,
-            funds: p.settings.funds
+            funds: p.settings.funds,
+            rewardToken: p.settings.rewardToken
         });
     }
 
@@ -310,7 +358,7 @@ contract PollsDApp {
     function updateTargetFund(uint256 pollId, uint256 newTargetFund) external payable nonReentrant {
         Poll storage p = polls[pollId];
         require(msg.sender == p.content.creator, "Not creator");
-        require(p.content.isOpen, "Not open");
+        require(keccak256(bytes(p.content.status)) == keccak256(bytes("new")), "Not funding");
         require(newTargetFund >= p.settings.minContribution, "Target < min");
         require(newTargetFund >= p.settings.funds, "Target < funds");
 
@@ -325,8 +373,20 @@ contract PollsDApp {
         require(keccak256(bytes(p.content.status)) == keccak256(bytes("for-funding")), "Not funding");
         require(msg.value >= p.settings.minContribution, "Below min");
         require(p.settings.funds + msg.value <= p.settings.targetFund, "Exceeds target");
-        
+
         p.settings.funds += msg.value;
+    }
+
+    function fundPollWithToken(uint256 pollId, uint256 amount) external nonReentrant {
+        Poll storage p = polls[pollId];
+        require(keccak256(bytes(p.content.status)) == keccak256(bytes("for-funding")), "Not funding");
+        require(amount >= p.settings.minContribution, "Below min");
+        require(p.settings.funds + amount <= p.settings.targetFund, "Exceeds target");
+        require(p.settings.rewardToken != address(0), "Native token only");
+        require(whitelistedTokens[p.settings.rewardToken], "Token not whitelisted");
+
+        IERC20(p.settings.rewardToken).transferFrom(msg.sender, address(this), amount);
+        p.settings.funds += amount;
     }
 
     function claimReward(uint256 pollId) external payable nonReentrant {
@@ -346,9 +406,14 @@ contract PollsDApp {
         
         require(found, "No rewards");
         require(totalReward > 0, "Zero reward");
-        require(address(this).balance >= totalReward, "Low balance");
-        
-        (bool success, ) = msg.sender.call{value: totalReward}("");
-        require(success, "Transfer failed");
+
+        if (p.settings.rewardToken == address(0)) {
+            require(address(this).balance >= totalReward, "Low balance");
+            (bool success, ) = msg.sender.call{value: totalReward}("");
+            require(success, "Transfer failed");
+        } else {
+            require(IERC20(p.settings.rewardToken).balanceOf(address(this)) >= totalReward, "Low balance");
+            require(IERC20(p.settings.rewardToken).transfer(msg.sender, totalReward), "Transfer failed");
+        }
     }
 }
