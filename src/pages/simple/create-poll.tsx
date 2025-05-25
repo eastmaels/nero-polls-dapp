@@ -9,7 +9,7 @@ import dayjs from 'dayjs';
 
 interface CreatePollProps {
   handleCreatePoll: (pollData: any) => Promise<void>;
-  handleTabChange?: (tab: string) => void;
+  handleTabChange: (tab: string) => void;
 }
 
 interface PollOption {
@@ -67,7 +67,7 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
 
       console.log('Submitting poll data:', pollData);
       await handleCreatePoll(pollData);
-      handleTabChange("dashboard");
+      handleTabChange("created-polls");
     } catch (error) {
       console.error('Validation failed:', error);
     } finally {

@@ -13,18 +13,9 @@ import { Button, Form, Modal, Space, Input } from 'antd';
 import ManagePoll from "@/pages/simple/manage-poll";
 import { PollState } from "@/types/poll";
 import { ethers } from 'ethers';
-import { getSigner, fundPoll } from '@/utils/aaUtils';
 import { getCompressedAddress } from "@/utils/addressUtil";
 
-const NERO_POLL_ABI = [
-  // Basic ERC721 functions from the standard ABI
-  ...POLLS_DAPP_ABI,
-  // Add the mint function that exists in the NeroNFT contract
-  'function mint(address to, string memory uri) returns (uint256)',
-  'function tokenURI(uint256 tokenId) view returns (string memory)',
-];
-
-export default function CreatedPolls({ AAaddress, handleTabChange, polls, fetchPolls, activeDashboardTab }: 
+export default function ManagePolls({ AAaddress, handleTabChange, polls, fetchPolls, activeDashboardTab }:
   { AAaddress: string, handleTabChange: (tab: string) => void, polls: PollState[], fetchPolls: () => void, activeDashboardTab: string }) {
   // Filter polls based on their status
   const createdPolls = polls.filter(poll => poll.creator === AAaddress)
@@ -68,8 +59,8 @@ function calculateTimeLeft(endTime: string | Date): string {
 }
 
 
-function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress, handleFundPoll }: 
-  { poll: any, type: string, fetchPolls: () => void, handleTabChange?: (tab: string) => void, AAaddress?: string, handleFundPoll?: (poll: any, amount: any) => void, }) {
+function PollCard({ poll, type, fetchPolls, AAaddress, }: 
+  { poll: any, type: string, fetchPolls: () => void, AAaddress?: string, }) {
   
   const { isConnected, } = useSignature();
   const { execute, waitForUserOpResult, sendUserOp } = useSendUserOp();
@@ -107,7 +98,7 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress, handleFu
       await execute({
         function: 'submitResponse',
         contractAddress: CONTRACT_ADDRESSES.dpollsContract,
-        abi: NERO_POLL_ABI, // Use the specific ABI with mint function
+        abi: POLLS_DAPP_ABI, // Use the specific ABI with mint function
         params: [
           poll.id,
           option.text,
@@ -295,6 +286,7 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress, handleFu
       setTxStatus('An error occurred');
     } finally {
       setIsLoading(false);
+      setIsClosePollModalOpen(false)
     }
   };
 
@@ -429,6 +421,10 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress, handleFu
     return { text: option, percentage: computePercentage(poll.responses, option)};
   });
 
+  const funds = parseFloat(ethers.utils.formatEther(poll.funds || '0'));
+  const targetFund = parseFloat(ethers.utils.formatEther(poll.targetFund || '0'));
+  const targetReached = funds >= targetFund;
+
   return (
     <Card className="overflow-hidden">
       <CardHeader className="pb-3">
@@ -445,12 +441,8 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress, handleFu
           <span className="mx-1">•</span>
           <Users className="h-4 w-4" />
           <span>{poll.totalResponses} / {poll.maxResponses} votes</span>
-          {type === "created" &&
-            <>
-              <CircleDollarSign className="h-4 w-4" />
-              <span>{ethers.utils.formatEther(poll.funds || '0')} NERO </span>
-            </>
-          }
+          <CircleDollarSign className="h-4 w-4" />
+          <span>{ethers.utils.formatEther(poll.funds || '0')} / {ethers.utils.formatEther(poll.targetFund || '0')} NERO </span>
         </div>
 
         <div className="space-y-2">
@@ -484,59 +476,62 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress, handleFu
           <span className="text-xs text-muted-foreground">{getCompressedAddress(poll.creator)}</span>
         </div>
         <div className="flex">
-          {poll.status === "open" && type === "active" && 
-            <Button
-              // variant={type === "voted" ? "outline" : "default"} size="sm" className="text-white"
-              block
-              onClick={() => setIsVoteModalOpen(true)}
-              type="primary"
-            >
-            Vote
-            </Button>
-          }
-          {(poll.status === "new" && type === "created") &&
-            <Button block variant="outlined" size="small" type="primary"
-              onClick={() => setIsManagePollModalOpen(true)}>
-              Manage
-            </Button>
-          }
-          {poll.status === "new" && type === "created" &&
-            <Button block variant="outlined" size="small" type="primary" 
-              onClick={() => setIsOpenForFundingModalOpen(true)}>
-                Open For Funding
-            </Button>
-          }
-          {poll.status === "for-funding" && type === "created" &&
-            <Button block variant="outlined" size="small" type="primary" 
-              onClick={() => setIsOpenPollModalOpen(true)}>
-                Open For Voting
-            </Button>
-          }
-          {type === "created" && poll.status === "open" &&
-            <Button block variant="outlined" size="small" type="primary"
-              onClick={() => setIsForClaimingModalOpen(true)}>
-                For Rewards Claim
-            </Button>
-          }
-          {type === "created" && poll.status === "for-claiming" && 
-            <Button block variant="outlined" size="small" type="primary"
-              onClick={() => setIsClosePollModalOpen(true)}>
-                Close Poll
-            </Button>
-          }
-          {type === "voted" && poll.status === "for-claiming" &&
-            <Button block variant="outlined" size="small" type="primary"
-              disabled={isClaimed}
-              onClick={() => setIsClaimModalOpen(true)}>
-                Claim
-            </Button>
-          }
-          {(type === "created" || type === "funding") && poll.status === "for-funding" &&
-            <Button block variant="outlined" size="small" type="primary"
-              onClick={() => setIsFundingModalOpen(true)}>
-                Fund
-            </Button>
-          }
+          <Space direction="horizontal" size="middle">
+            {poll.status === "open" && type === "active" && 
+              <Button
+                // variant={type === "voted" ? "outline" : "default"} size="sm" className="text-white"
+                block
+                onClick={() => setIsVoteModalOpen(true)}
+                type="primary"
+              >
+                Vote
+              </Button>
+            }
+            {(poll.status === "new" && type === "created") &&
+              <Button block variant="outlined" size="small" type="primary"
+                onClick={() => setIsManagePollModalOpen(true)}>
+                Manage
+              </Button>
+            }
+            {poll.status === "new" && type === "created" &&
+              <Button block variant="outlined" size="small" type="primary" 
+                onClick={() => setIsOpenForFundingModalOpen(true)}>
+                  Open For Funding
+              </Button>
+            }
+            {poll.status === "for-funding" && type === "created" &&
+              <Button block variant="outlined" size="small" type="primary" 
+                onClick={() => setIsOpenPollModalOpen(true)}>
+                  Open For Voting
+              </Button>
+            }
+            {type === "created" && poll.status === "open" &&
+              <Button block variant="outlined" size="small" type="primary"
+                onClick={() => setIsForClaimingModalOpen(true)}>
+                  For Rewards Claim
+              </Button>
+            }
+            {type === "created" && poll.status === "for-claiming" && 
+              <Button block variant="outlined" size="small" type="primary"
+                onClick={() => setIsClosePollModalOpen(true)}>
+                  Close Poll
+              </Button>
+            }
+            {type === "voted" && poll.status === "for-claiming" &&
+              <Button block variant="outlined" size="small" type="primary"
+                disabled={isClaimed}
+                onClick={() => setIsClaimModalOpen(true)}>
+                  Claim
+              </Button>
+            }
+            {(type === "created" || type === "funding") && poll.status === "for-funding" &&
+              <Button block variant="outlined" size="small" type="primary"
+                onClick={() => setIsFundingModalOpen(true)}
+                disabled={targetReached}>
+                {targetReached ? 'Target Reached' : 'Fund'}
+              </Button>
+            }
+          </Space>
         </div>
       </CardFooter>
       <Modal

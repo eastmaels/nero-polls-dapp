@@ -13,8 +13,10 @@ import { Progress } from "@/components/ui_v3/progress"
 
 import LeaderboardPage from '@/pages/leaderboard/page';
 import CreatePoll from "@/pages/simple/create-poll"
-import ActivePolls from './active-polls';
-import CreatedPolls from './created-polls';
+import ActivePolls from '@/components/active-polls';
+import ManagePolls from '@/components/manage-polls';
+import FundingPolls from '@/components/funding-polls';
+import ClaimingPolls from '@/components/claiming-polls';
 
 interface DashboardContentProps {
   activeTab: string
@@ -77,6 +79,8 @@ export default function DashboardContent({ activeTab, setActiveTab }: DashboardC
                   reward: response.reward
                 }
               });
+
+              console.log('pollDetails', pollDetails)
               
               // Format the poll data
               return {
@@ -155,8 +159,9 @@ export default function DashboardContent({ activeTab, setActiveTab }: DashboardC
           parseInt(pollForm.maxResponses),
           ethers.utils.parseEther(pollForm.minContribution).toString(),
           ethers.utils.parseEther(pollForm.targetFund).toString(),
+          ethers.constants.AddressZero, // Use address(0) for native ETH
         ],
-        value: 0,
+        value: 0
       });
 
       const result = await waitForUserOpResult();
@@ -182,11 +187,15 @@ export default function DashboardContent({ activeTab, setActiveTab }: DashboardC
   // Render different content based on active tab
   if (activeTab === "create-poll") {
     //return <CreatePollContent />
-    return <CreatePoll handleCreatePoll={handleCreatePoll} />
+    return <CreatePoll handleCreatePoll={handleCreatePoll} handleTabChange={setActiveTab} />
   } else if (activeTab === "created-polls") {
-    return <CreatedPolls AAaddress={AAaddress} handleTabChange={setActiveTab} polls={polls} fetchPolls={fetchPolls} activeDashboardTab={activeDashboardTab} />
+    return <ManagePolls AAaddress={AAaddress} handleTabChange={setActiveTab} polls={polls} fetchPolls={fetchPolls} activeDashboardTab={activeDashboardTab} />
   } else if (activeTab === "active-polls") {
     return <ActivePolls AAaddress={AAaddress} polls={polls} fetchPolls={fetchPolls} />
+  } else if (activeTab === "funding-polls") {
+    return <FundingPolls polls={polls} fetchPolls={fetchPolls} />
+  } else if (activeTab === "claiming") {
+    return <ClaimingPolls AAaddress={AAaddress} polls={polls} fetchPolls={fetchPolls} />
   } else if (activeTab === "settings") {
     return <SettingsContent />
   } else if (activeTab === "games") {
