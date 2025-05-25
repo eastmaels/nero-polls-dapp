@@ -13,10 +13,10 @@ import { Progress } from "@/components/ui_v3/progress"
 
 import LeaderboardPage from '@/pages/leaderboard/page';
 import CreatePoll from "@/pages/simple/create-poll"
-import ActivePolls from '@/components/active-polls';
-import ManagePolls from '@/components/manage-polls';
-import FundingPolls from '@/components/funding-polls';
-import ClaimingPolls from '@/components/claiming-polls';
+import ActivePolls from '@/pages/admin/content/active-polls';
+import ManagePolls from '@/pages/admin/content/manage-polls';
+import FundingPolls from '@/pages/admin/content/funding-polls';
+import ClaimingPolls from '@/pages/admin/content/claiming-polls';
 
 interface DashboardContentProps {
   activeTab: string

@@ -14,9 +14,9 @@ import {
 } from "@/components/ui_v3/dropdown-menu"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui_v3/sheet"
 import { cn } from "@/lib/utils"
-import LeftSidebar from "@/components/left-sidebar"
-import RightSidebar from "@/components/right-sidebar"
-import DashboardContent from "@/components/dashboard-content"
+import LeftSidebar from "@/pages/admin/content/left-sidebar"
+import RightSidebar from "@/pages/admin/content/right-sidebar"
+import DashboardContent from "@/pages/admin/content/dashboard-content"
 
 export default function PollAdminDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard")
@@ -33,7 +33,7 @@ export default function PollAdminDashboard() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background m-5 p-5">
+    <div className="flex flex-col h-screen bg-background ml-0 mt-3 pl-0 pt-0 pr-5 mr-5">
       {/* Header */}
       <header className="border-b sticky top-0 z-40 bg-background">
         <div className="flex h-16 items-center px-4 justify-between">
@@ -41,7 +41,7 @@ export default function PollAdminDashboard() {
             {/* Mobile menu button */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden mr-2">
+                <Button variant="ghost" size="icon" className="md:hidden mr-2 p-0">
                   <MenuIcon className="h-5 w-5" />
                   <span className="sr-only">Toggle menu</span>
                 </Button>
@@ -93,7 +93,7 @@ export default function PollAdminDashboard() {
                   <span className="sr-only">Toggle right panel</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[240px] sm:w-[300px] p-0">
+              <SheetContent side="right" className="w-[240px] sm:w-[300px] p-0" style={{zIndex: 9999999}}>
                 <RightSidebar isMobile={true} />
               </SheetContent>
             </Sheet>
