@@ -188,7 +188,7 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
             ]}
             style={{ textAlign: 'center' }}
           >
-            <Input type="number" placeholder="Enter reward amount" />
+            <Input type="number" placeholder="This is the amount in NEONs that responders will receive" />
           </Form.Item>
           <Form.Item 
             label="Max Responses"
@@ -198,7 +198,7 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
             ]}
             style={{ textAlign: 'center' }}
           >
-            <Input type="number" placeholder="Enter maximum number of responses" />
+            <Input type="number" placeholder="This is the limit to the number of responses the poll will gather" />
           </Form.Item>
           <Form.Item 
             label="Min Contribution"
@@ -209,7 +209,7 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
             ]}
             style={{ textAlign: 'center' }}
           >
-            <Input type="number" placeholder="Enter minimum contribution amount" />
+            <Input type="number" placeholder="Minimum amount in NEON that funders (if crowdfunding) can contribute" />
           </Form.Item>
           <Form.Item 
             label="Target Fund"
@@ -220,7 +220,7 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
             ]}
             style={{ textAlign: 'center' }}
           >
-            <Input type="number" placeholder="Enter target fund amount" />
+            <Input type="number" placeholder="The target fund amount in NEON for this poll's reward pool" />
           </Form.Item>
         </Card>
 
