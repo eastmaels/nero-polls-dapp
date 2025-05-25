@@ -5,18 +5,17 @@ import { useSignature, useSendUserOp, useConfig, useEthersSigner } from '@/hooks
 import { POLLS_DAPP_ABI,  } from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui_v2/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui_v2/tabs"
 import { Badge } from "@/components/ui_v2/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui_v2/avatar"
-import { PlusCircle, Clock, Users, CircleDollarSign } from "lucide-react"
+import { Clock, Users, CircleDollarSign } from "lucide-react"
 import { Button, Form, Modal, Space, Input } from 'antd';
 import ManagePoll from "@/pages/simple/manage-poll";
 import { PollState } from "@/types/poll";
 import { ethers } from 'ethers';
 import { getCompressedAddress } from "@/utils/addressUtil";
 
-export default function ManagePolls({ AAaddress, handleTabChange, polls, fetchPolls, activeDashboardTab }:
-  { AAaddress: string, handleTabChange: (tab: string) => void, polls: PollState[], fetchPolls: () => void, activeDashboardTab: string }) {
+export default function ManagePolls({ AAaddress, handleTabChange, polls, fetchPolls }:
+  { AAaddress: string, handleTabChange: (tab: string) => void, polls: PollState[], fetchPolls: () => void }) {
   // Filter polls based on their status
   const createdPolls = polls.filter(poll => poll.creator === AAaddress)
 
@@ -27,7 +26,6 @@ export default function ManagePolls({ AAaddress, handleTabChange, polls, fetchPo
               <PollCard
                 key={poll.id} poll={poll} type="created" 
                 fetchPolls={fetchPolls}
-                handleTabChange={() => handleTabChange('create-poll')}
               />
             ))}
             {createdPolls.length === 0 && (
@@ -60,7 +58,7 @@ function calculateTimeLeft(endTime: string | Date): string {
 
 
 function PollCard({ poll, type, fetchPolls, AAaddress, }: 
-  { poll: any, type: string, fetchPolls: () => void, AAaddress?: string, }) {
+  { poll: PollState, type: string, fetchPolls: () => void, AAaddress?: string, }) {
   
   const { isConnected, } = useSignature();
   const { execute, waitForUserOpResult, sendUserOp } = useSendUserOp();
@@ -140,7 +138,7 @@ function PollCard({ poll, type, fetchPolls, AAaddress, }:
       await execute({
         function: 'updatePoll',
         contractAddress: CONTRACT_ADDRESSES.dpollsContract,
-        abi: NERO_POLL_ABI, // Use the specific ABI with mint function
+        abi: POLLS_DAPP_ABI, // Use the specific ABI with mint function
         params: [
           updatedPoll.id,
           updatedPoll.subject,
@@ -186,7 +184,7 @@ function PollCard({ poll, type, fetchPolls, AAaddress, }:
       await execute({
         function: 'forClaiming',
         contractAddress: CONTRACT_ADDRESSES.dpollsContract,
-        abi: NERO_POLL_ABI,
+        abi: POLLS_DAPP_ABI,
         params: [
           poll.id,
         ],
@@ -225,7 +223,7 @@ function PollCard({ poll, type, fetchPolls, AAaddress, }:
       await execute({
         function: 'openPoll',
         contractAddress: CONTRACT_ADDRESSES.dpollsContract,
-        abi: NERO_POLL_ABI,
+        abi: POLLS_DAPP_ABI,
         params: [
           poll.id,
         ],
@@ -264,7 +262,7 @@ function PollCard({ poll, type, fetchPolls, AAaddress, }:
       await execute({
         function: 'closePoll',
         contractAddress: CONTRACT_ADDRESSES.dpollsContract,
-        abi: NERO_POLL_ABI,
+        abi: POLLS_DAPP_ABI,
         params: [
           poll.id,
         ],
@@ -303,7 +301,7 @@ function PollCard({ poll, type, fetchPolls, AAaddress, }:
       await execute({
         function: method,
         contractAddress: CONTRACT_ADDRESSES.dpollsContract,
-        abi: NERO_POLL_ABI,
+        abi: POLLS_DAPP_ABI,
         params: [
           poll.id,
         ],
@@ -338,7 +336,7 @@ function PollCard({ poll, type, fetchPolls, AAaddress, }:
       await execute({
         function: 'claimReward',
         contractAddress: CONTRACT_ADDRESSES.dpollsContract,
-        abi: NERO_POLL_ABI,
+        abi: POLLS_DAPP_ABI,
         params: [
           poll.id,
         ],
@@ -381,7 +379,7 @@ function PollCard({ poll, type, fetchPolls, AAaddress, }:
       await execute({
         function: 'fundPoll',
         contractAddress: CONTRACT_ADDRESSES.dpollsContract,
-        abi: NERO_POLL_ABI, // Use the specific ABI with mint function
+        abi: POLLS_DAPP_ABI, // Use the specific ABI with mint function
         params: [
           poll.id,
         ],
@@ -424,6 +422,9 @@ function PollCard({ poll, type, fetchPolls, AAaddress, }:
   const funds = parseFloat(ethers.utils.formatEther(poll.funds || '0'));
   const targetFund = parseFloat(ethers.utils.formatEther(poll.targetFund || '0'));
   const targetReached = funds >= targetFund;
+
+  const isEnded = poll.endTime >= new Date();
+  const targetResponseCountReached = poll.responses.length >= poll.maxResponses;
 
   return (
     <Card className="overflow-hidden">
@@ -501,13 +502,17 @@ function PollCard({ poll, type, fetchPolls, AAaddress, }:
             }
             {poll.status === "for-funding" && type === "created" &&
               <Button block variant="outlined" size="small" type="primary" 
-                onClick={() => setIsOpenPollModalOpen(true)}>
+                onClick={() => setIsOpenPollModalOpen(true)}
+                disabled={!targetReached}
+              >
                   Open For Voting
               </Button>
             }
             {type === "created" && poll.status === "open" &&
               <Button block variant="outlined" size="small" type="primary"
-                onClick={() => setIsForClaimingModalOpen(true)}>
+                onClick={() => setIsForClaimingModalOpen(true)}
+                disabled={!(isEnded || targetResponseCountReached)}
+              >
                   For Rewards Claim
               </Button>
             }

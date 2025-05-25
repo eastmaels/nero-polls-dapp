@@ -17,6 +17,7 @@ import ActivePolls from '@/pages/admin/content/active-polls';
 import ManagePolls from '@/pages/admin/content/manage-polls';
 import FundingPolls from '@/pages/admin/content/funding-polls';
 import ClaimingPolls from '@/pages/admin/content/claiming-polls';
+import CompletedPolls from './completed-polls';
 
 interface DashboardContentProps {
   activeTab: string
@@ -191,11 +192,13 @@ export default function DashboardContent({ activeTab, setActiveTab }: DashboardC
   } else if (activeTab === "created-polls") {
     return <ManagePolls AAaddress={AAaddress} handleTabChange={setActiveTab} polls={polls} fetchPolls={fetchPolls} activeDashboardTab={activeDashboardTab} />
   } else if (activeTab === "active-polls") {
-    return <ActivePolls AAaddress={AAaddress} polls={polls} fetchPolls={fetchPolls} />
+    return <ActivePolls AAaddress={AAaddress} handleTabChange={setActiveTab} polls={polls} fetchPolls={fetchPolls} />
   } else if (activeTab === "funding-polls") {
-    return <FundingPolls polls={polls} fetchPolls={fetchPolls} />
+    return <FundingPolls polls={polls} handleTabChange={setActiveTab} fetchPolls={fetchPolls} />
   } else if (activeTab === "claiming") {
-    return <ClaimingPolls AAaddress={AAaddress} polls={polls} fetchPolls={fetchPolls} />
+    return <ClaimingPolls AAaddress={AAaddress} handleTabChange={setActiveTab} polls={polls} fetchPolls={fetchPolls} />
+  } else if (activeTab === "completed-polls") {
+    return <CompletedPolls AAaddress={AAaddress} handleTabChange={setActiveTab} polls={polls} fetchPolls={fetchPolls} />
   } else if (activeTab === "settings") {
     return <SettingsContent />
   } else if (activeTab === "games") {

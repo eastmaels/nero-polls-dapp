@@ -13,8 +13,8 @@ import { ethers } from 'ethers';
 import { CircleDollarSign, Clock, Users } from "lucide-react";
 import { useState } from "react";
 
-export default function FundingPolls({ polls, fetchPolls }:
-  { polls: PollState[], fetchPolls: () => void, }) {
+export default function FundingPolls({ polls, fetchPolls, handleTabChange }:
+  { polls: PollState[], fetchPolls: () => void, handleTabChange: (tab: string) => void, }) {
   // Filter polls based on their status
   const fundingPolls = polls.filter(poll => poll.status === "for-funding")
   console.log('fundingPolls', fundingPolls)
@@ -33,6 +33,9 @@ export default function FundingPolls({ polls, fetchPolls }:
         {fundingPolls.length === 0 && (
           <div className="col-span-3 text-center py-10">
             <p className="text-gray-500">No polls are currently open for funding</p>
+            <Button className="mt-4" onClick={() => handleTabChange('create-poll')}>
+              Create Your First Poll
+            </Button>
           </div>
         )}
       </div>

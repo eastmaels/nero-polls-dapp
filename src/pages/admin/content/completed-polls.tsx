@@ -13,12 +13,12 @@ import { ethers } from 'ethers';
 import { CircleDollarSign, Clock, Users } from "lucide-react";
 import { useState } from "react";
 
-export default function ClaimingPolls({ AAaddress, polls, fetchPolls, handleTabChange }:
-  { AAaddress: string, polls: PollState[], fetchPolls: () => void, handleTabChange: (tab: string) => void }) {
+export default function CompletedPolls({ AAaddress, polls, fetchPolls, handleTabChange, }:
+  { AAaddress: string, polls: PollState[], fetchPolls: () => void, handleTabChange: (tab: string) => void, }) {
 
   // Filter polls based on their status
-  const targetPolls = polls.filter(poll => poll.status === "for-claiming")
-  console.log('for claiming', targetPolls)
+  const targetPolls = polls.filter(poll => poll.status === "closed")
+  console.log('target poll', targetPolls)
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -34,7 +34,7 @@ export default function ClaimingPolls({ AAaddress, polls, fetchPolls, handleTabC
         ))}
         {targetPolls.length === 0 && (
           <div className="col-span-3 text-center py-10">
-            <p className="text-gray-500">No polls are currently open for claiming</p>
+            <p className="text-gray-500">Nothing to see here</p>
             <Button className="mt-4" onClick={() => handleTabChange('create-poll')}>
               Create Your First Poll
             </Button>
@@ -144,9 +144,6 @@ function PollCard({ poll, type, fetchPolls, AAaddress }:
       </CardHeader>
       <CardContent className="pb-2">
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-          <Clock className="h-4 w-4" />
-          <span>{calculateTimeLeft(poll.endTime)}</span>
-          <span className="mx-1">•</span>
           <Users className="h-4 w-4" />
           <span>{poll.totalResponses} / {poll.maxResponses} votes</span>
           <CircleDollarSign className="h-4 w-4" />

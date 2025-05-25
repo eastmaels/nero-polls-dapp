@@ -69,13 +69,6 @@ export default function LeftSidebar({ activeTab, setActiveTab, isMobile }: LeftS
                 Completed Polls
               </Button>
               <Button
-                variant={activeTab === "draft-polls" ? "secondary" : "ghost"}
-                className="w-full justify-start"
-                onClick={() => setActiveTab("draft-polls")}
-              >
-                Draft Polls
-              </Button>
-              <Button
                 variant={activeTab === "new" ? "secondary" : "ghost"}
                 className="w-full justify-start"
                 onClick={() => setActiveTab("created-polls")}

@@ -12,15 +12,15 @@ import { ethers } from 'ethers';
 import { CircleDollarSign, Clock, Users } from "lucide-react";
 import { useState } from "react";
 
-export default function ActivePolls({ polls, fetchPolls, AAaddress }:
-  { AAaddress: string, polls: PollState[], fetchPolls: () => void }) {
+export default function ActivePolls({ polls, fetchPolls, AAaddress, handleTabChange }:
+  { AAaddress: string, polls: PollState[], fetchPolls: () => void, handleTabChange: (tab: string) => void, }) {
   // Filter polls based on their status
-  const activePolls = polls.filter(poll => poll.isOpen && (poll.status === "open"))
+  const targetPolls = polls.filter(poll => poll.isOpen && (poll.status === "open"))
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {activePolls.map((poll) => (
+        {targetPolls.map((poll) => (
           <PollCard
             key={poll.id}
             poll={poll}
@@ -29,9 +29,12 @@ export default function ActivePolls({ polls, fetchPolls, AAaddress }:
             AAaddress={AAaddress}
           />
         ))}
-        {activePolls.length === 0 && (
+        {targetPolls.length === 0 && (
           <div className="col-span-3 text-center py-10">
-            <p className="text-gray-500">No active polls found</p>
+            <p className="text-gray-500">No active polls</p>
+            <Button className="mt-4" onClick={() => handleTabChange('create-poll')}>
+              Create Your First Poll
+            </Button>
           </div>
         )}
       </div>
