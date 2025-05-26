@@ -75,6 +75,12 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
     }
   };
 
+
+  const rewardPerResponse = form.getFieldValue("rewardPerResponse");
+  const maxResponses = form.getFieldValue("maxResponses");
+  const targetFund  = rewardPerResponse * maxResponses;
+  form.setFieldValue("targetFund", targetFund);
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
       <Form
@@ -220,7 +226,7 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
             ]}
             style={{ textAlign: 'center' }}
           >
-            <Input type="number" placeholder="The target fund amount in NEON for this poll's reward pool" />
+            <Input readOnly type="number" placeholder="The target fund amount in NEON for this poll's reward pool" />
           </Form.Item>
         </Card>
 
