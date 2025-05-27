@@ -6,6 +6,7 @@ export interface PollState {
   creator: string;
   subject: string;
   description: string;
+  category: string;
   status: string;
   createdAt: Date;
   options: string[];

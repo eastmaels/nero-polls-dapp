@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { Link } from 'react-router-dom'
 import { Home, PlusCircle, Settings, Gamepad2, Trophy, MenuIcon, User, Bell, ChevronRight, Play } from "lucide-react"
 import { Button } from "@/components/ui_v3/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui_v3/avatar"
@@ -53,7 +54,9 @@ export default function PollAdminDashboard() {
               </SheetContent>
             </Sheet>
 
-            <h1 className="text-xl font-bold">Poll Admin</h1>
+            <Link to="/">
+              <h1 className="text-xl font-bold">Poll Admin</h1>
+            </Link>
           </div>
 
           <div className="flex items-center gap-4">

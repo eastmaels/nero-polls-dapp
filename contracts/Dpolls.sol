@@ -72,6 +72,7 @@ contract PollsDApp is Ownable {
         address creator;
         string subject;
         string description;
+        string category;
         string status;
         string[] options;
         bool isOpen;
@@ -87,6 +88,7 @@ contract PollsDApp is Ownable {
         address creator;
         string subject;
         string description;
+        string category;
         string status;
         string[] options;
         uint256 rewardPerResponse;
@@ -115,12 +117,14 @@ contract PollsDApp is Ownable {
         address creator,
         string memory subject,
         string memory description,
+        string memory category,
         string[] memory options
     ) private pure returns (PollContent memory) {
         return PollContent({
             creator: creator,
             subject: subject,
             description: description,
+            category: category,
             status: "new",
             options: options,
             isOpen: false
@@ -152,6 +156,7 @@ contract PollsDApp is Ownable {
     function createPoll(
         string memory subject,
         string memory description,
+        string memory category,
         string[] memory options,
         uint256 rewardPerResponse,
         uint256 durationDays,
@@ -167,7 +172,7 @@ contract PollsDApp is Ownable {
         require(targetFund >= rewardPerResponse * maxResponses, "Target >= rewards");
         require(rewardToken == address(0) || whitelistedTokens[rewardToken], "Token not whitelisted");
 
-        PollContent memory content = _initializePollContent(msg.sender, subject, description, options);
+        PollContent memory content = _initializePollContent(msg.sender, subject, description, category, options);
         PollSettings memory settings = _initializePollSettings(
             rewardPerResponse,
             durationDays,
@@ -306,6 +311,7 @@ contract PollsDApp is Ownable {
             creator: p.content.creator,
             subject: p.content.subject,
             description: p.content.description,
+            category: p.content.category,
             status: p.content.status,
             options: p.content.options,
             rewardPerResponse: p.settings.rewardPerResponse,

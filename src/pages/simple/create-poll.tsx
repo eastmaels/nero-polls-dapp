@@ -2,14 +2,15 @@
 
 import { useState } from "react"
 import { Trash2, PlusCircle, } from "lucide-react"
-import { DatePicker, DatePickerProps } from "antd";
+import { ConfigProvider, DatePicker, DatePickerProps } from "antd";
 import { Button, Form, Input, Card, Space } from 'antd';
 import { Steps } from 'antd';
 import dayjs from 'dayjs';
+import { rgba } from "framer-motion";
 
 interface CreatePollProps {
   handleCreatePoll: (pollData: any) => Promise<void>;
-  handleTabChange: (tab: string) => void;
+  handleTabChange?: (tab: string) => void;
 }
 
 interface PollOption {
@@ -33,7 +34,7 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
   const steps = [
     { title: 'Basic Info' },
     { title: 'Options' },
-    { title: 'Settings'}
+    { title: 'Settings' }
   ];
 
   const next = async () => {
@@ -67,7 +68,9 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
 
       console.log('Submitting poll data:', pollData);
       await handleCreatePoll(pollData);
-      handleTabChange("created-polls");
+      if (handleTabChange) {
+        handleTabChange("created-polls");
+      }
     } catch (error) {
       console.error('Validation failed:', error);
     } finally {
@@ -78,9 +81,8 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
 
   const rewardPerResponse = form.getFieldValue("rewardPerResponse");
   const maxResponses = form.getFieldValue("maxResponses");
-  const targetFund  = rewardPerResponse * maxResponses;
-  form.setFieldValue("targetFund", targetFund);
-
+  const targetFund = rewardPerResponse * maxResponses;
+ 
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl" data-tour="poll-form">
       <Form
@@ -90,16 +92,26 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
         style={{ maxWidth: 600, margin: '0 auto' }}
       >
 
-        <Steps
-          current={current}
-          percent={current / (steps.length - 1) * 100}
-          items={steps}
-        />
+        <ConfigProvider
+          theme={{
+            components: {
+              Steps: {
+                navArrowColor: "#FFFFFF"
+              },
+            },
+          }}
+        >
+          <Steps
+            current={current}
+            percent={current / (steps.length - 1) * 100}
+            items={steps}
+          />
+        </ConfigProvider>
         {/* <div style={contentStyle}>{stepItems[current].content}</div> */}
         <Card
           style={current == 0 ? {} : { display: "none" }}
         >
-          <Form.Item 
+          <Form.Item
             label="Subject"
             name="subject"
             rules={[{ required: true, message: 'Please enter a subject' }]}
@@ -107,7 +119,7 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
           >
             <Input placeholder="Subject" />
           </Form.Item>
-          <Form.Item 
+          <Form.Item
             label="Description"
             name="description"
             rules={[{ required: true, message: 'Please enter a description' }]}
@@ -115,7 +127,7 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
           >
             <Input placeholder="Enter poll description" />
           </Form.Item>
-          <Form.Item 
+          <Form.Item
             label="End Date"
             name="endDate"
             rules={[{ required: true, message: 'Please select an end date' }]}
@@ -153,12 +165,13 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
                   >
                     <Space.Compact style={{ width: '100%', justifyContent: 'center' }}>
                       <Input
-                        placeholder={`Enter option ${name + 1}`} 
+                        placeholder={`Enter option ${name + 1}`}
                       />
                       {fields.length > 2 && (
-                        <Button 
-                          type="text" 
-                          danger 
+                        <Button
+                          color="default"
+                          type="text"
+                          danger
                           icon={<Trash2 size={16} />}
                           onClick={() => remove(name)}
                         />
@@ -167,10 +180,11 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
                   </Form.Item>
                 ))}
                 <Form.Item style={{ textAlign: 'center' }}>
-                  <Button 
-                    type="dashed" 
-                    onClick={() => add({ text: "" })} 
-                    block 
+                  <Button
+                    color="default"
+                    type="dashed"
+                    onClick={() => add({ text: "" })}
+                    block
                     icon={<PlusCircle size={16} />}
                   >
                     Add Option
@@ -185,7 +199,7 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
         <Card
           style={current == 2 ? {} : { display: "none" }}
         >
-          <Form.Item 
+          <Form.Item
             label="Reward per Response"
             name="rewardPerResponse"
             tooltip="(in NERO units)"
@@ -196,7 +210,7 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
           >
             <Input type="number" placeholder="This is the amount in NEONs that responders will receive" />
           </Form.Item>
-          <Form.Item 
+          <Form.Item
             label="Max Responses"
             name="maxResponses"
             rules={[
@@ -206,7 +220,7 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
           >
             <Input type="number" placeholder="This is the limit to the number of responses the poll will gather" />
           </Form.Item>
-          <Form.Item 
+          <Form.Item
             label="Min Contribution"
             name="minContribution"
             tooltip="(in NERO units)"
@@ -217,7 +231,7 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
           >
             <Input type="number" placeholder="Minimum amount in NEON that funders (if crowdfunding) can contribute" />
           </Form.Item>
-          <Form.Item 
+          <Form.Item
             label="Target Fund"
             name="targetFund"
             tooltip="(in NERO units)"
@@ -226,13 +240,16 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
             ]}
             style={{ textAlign: 'center' }}
           >
-            <Input readOnly type="number" placeholder="The target fund amount in NEON for this poll's reward pool" />
+            <Input readOnly type="number" placeholder="The target fund amount in NEON for this poll's reward pool" 
+              value={targetFund}
+            />
           </Form.Item>
         </Card>
 
         <div style={{ marginTop: 24 }}>
           {current > 0 && (
             <Button
+              color="default"
               style={{ margin: '0 8px' }} onClick={() => prev()}
               disabled={loading}
             >
@@ -240,15 +257,18 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
             </Button>
           )}
           {current < steps.length - 1 && (
-            <Button type="primary" onClick={() => next()}>
+            <Button
+              color="default" variant="solid"
+              onClick={() => next()}
+            >
               Next
             </Button>
           )}
           {current === steps.length - 1 && (
             <Button
-            type="primary"
-            onClick={handleSubmit}
-            loading={loading}
+              color="default" variant="solid"
+              onClick={handleSubmit}
+              loading={loading}
             >
               Submit
             </Button>
