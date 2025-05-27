@@ -82,7 +82,7 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
   form.setFieldValue("targetFund", targetFund);
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-3xl">
+    <div className="container mx-auto px-4 py-8 max-w-3xl" data-tour="poll-form">
       <Form
         layout={"horizontal"}
         form={form}
