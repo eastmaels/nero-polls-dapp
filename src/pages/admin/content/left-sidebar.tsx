@@ -24,6 +24,7 @@ export default function LeftSidebar({ activeTab, setActiveTab, isMobile }: LeftS
             variant={activeTab === "dashboard" ? "secondary" : "ghost"}
             className="w-full justify-start"
             onClick={() => setActiveTab("dashboard")}
+            data-tour="dashboard-nav"
           >
             <Home className="mr-2 h-4 w-4" />
             Overview
@@ -44,6 +45,7 @@ export default function LeftSidebar({ activeTab, setActiveTab, isMobile }: LeftS
                 variant={activeTab === "active-polls" ? "secondary" : "ghost"}
                 className="w-full justify-start"
                 onClick={() => setActiveTab("active-polls")}
+                data-tour="active-polls-nav"
               >
                 Active Polls
               </Button>
@@ -51,6 +53,7 @@ export default function LeftSidebar({ activeTab, setActiveTab, isMobile }: LeftS
                 variant={activeTab === "funding-polls" ? "secondary" : "ghost"}
                 className="w-full justify-start"
                 onClick={() => setActiveTab("funding-polls")}
+                data-tour="funding-polls-nav"
               >
                 Funding
               </Button>
@@ -58,6 +61,7 @@ export default function LeftSidebar({ activeTab, setActiveTab, isMobile }: LeftS
                 variant={activeTab === "claiming" ? "secondary" : "ghost"}
                 className="w-full justify-start"
                 onClick={() => setActiveTab("claiming")}
+                data-tour="claim-polls-nav"
               >
                 Claiming
               </Button>
@@ -72,6 +76,7 @@ export default function LeftSidebar({ activeTab, setActiveTab, isMobile }: LeftS
                 variant={activeTab === "new" ? "secondary" : "ghost"}
                 className="w-full justify-start"
                 onClick={() => setActiveTab("created-polls")}
+                data-tour="manage-polls-nav"
               >
                 Manage
               </Button>
@@ -82,6 +87,7 @@ export default function LeftSidebar({ activeTab, setActiveTab, isMobile }: LeftS
             variant={activeTab === "analytics" ? "secondary" : "ghost"}
             className="w-full justify-start"
             onClick={() => setActiveTab("analytics")}
+            data-tour="analytics-nav"
           >
             <PieChart className="mr-2 h-4 w-4" />
             Analytics
@@ -91,6 +97,7 @@ export default function LeftSidebar({ activeTab, setActiveTab, isMobile }: LeftS
             variant={activeTab === "create-poll" ? "secondary" : "ghost"}
             className="w-full justify-start"
             onClick={() => setActiveTab("create-poll")}
+            data-tour="create-poll-nav"
           >
             <PlusCircle className="mr-2 h-4 w-4" />
             Create Poll

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Home, PlusCircle, Settings, Gamepad2, Trophy, MenuIcon, User, Bell, ChevronRight } from "lucide-react"
+import { Home, PlusCircle, Settings, Gamepad2, Trophy, MenuIcon, User, Bell, ChevronRight, Play } from "lucide-react"
 import { Button } from "@/components/ui_v3/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui_v3/avatar"
 import {
@@ -17,11 +17,13 @@ import { cn } from "@/lib/utils"
 import LeftSidebar from "@/pages/admin/content/left-sidebar"
 import RightSidebar from "@/pages/admin/content/right-sidebar"
 import DashboardContent from "@/pages/admin/content/dashboard-content"
+import GuidedTour from "@/pages/admin/content/guided-tour"
 
 export default function PollAdminDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard")
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true)
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true)
+  const [tourActive, setTourActive] = useState(true)
 
   // Toggle sidebars on mobile
   const toggleLeftSidebar = () => {
@@ -37,7 +39,7 @@ export default function PollAdminDashboard() {
       {/* Header */}
       <header className="border-b sticky top-0 z-40 bg-background">
         <div className="flex h-16 items-center px-4 justify-between">
-          <div className="flex items-center">
+          <div className="flex items-center" data-tour="dashboard-header">
             {/* Mobile menu button */}
             <Sheet>
               <SheetTrigger asChild>
@@ -58,6 +60,10 @@ export default function PollAdminDashboard() {
             <Button variant="ghost" size="icon">
               <Bell className="h-5 w-5" />
               <span className="sr-only">Notifications</span>
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => setTourActive(true)}>
+              <Play className="h-5 w-5" />
+              <span className="sr-only">Start Tour</span>
             </Button>
 
             <DropdownMenu>
@@ -135,7 +141,13 @@ export default function PollAdminDashboard() {
           <Home className={cn("h-5 w-5", activeTab === "dashboard" ? "text-primary" : "text-muted-foreground")} />
           <span className="sr-only">Home</span>
         </Button>
-        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setActiveTab("create-poll")}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full"
+          onClick={() => setActiveTab("create-poll")}
+          data-tour="create-poll-footer"
+        >
           <PlusCircle
             className={cn("h-5 w-5", activeTab === "create-poll" ? "text-primary" : "text-muted-foreground")}
           />
@@ -149,11 +161,23 @@ export default function PollAdminDashboard() {
           <Gamepad2 className={cn("h-5 w-5", activeTab === "games" ? "text-primary" : "text-muted-foreground")} />
           <span className="sr-only">Games</span>
         </Button>
-        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setActiveTab("leaderboard")}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full"
+          onClick={() => setActiveTab("leaderboard")}
+          data-tour="leaderboard-nav"
+        >
           <Trophy className={cn("h-5 w-5", activeTab === "leaderboard" ? "text-primary" : "text-muted-foreground")} />
           <span className="sr-only">Leaderboard</span>
         </Button>
       </footer>
+      <GuidedTour
+        isActive={tourActive}
+        onClose={() => setTourActive(false)}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+      />
     </div>
   )
 }
