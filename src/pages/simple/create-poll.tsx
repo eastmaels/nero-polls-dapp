@@ -1,12 +1,14 @@
 "use client"
 
 import { useState } from "react"
+import { useNavigate } from 'react-router-dom'
 import { Trash2, PlusCircle, } from "lucide-react"
-import { ConfigProvider, DatePicker, DatePickerProps } from "antd";
+import { ConfigProvider, DatePicker, DatePickerProps, InputNumber, Select } from "antd";
 import { Button, Form, Input, Card, Space } from 'antd';
 import { Steps } from 'antd';
 import dayjs from 'dayjs';
-import { rgba } from "framer-motion";
+
+const { Option } = Select;
 
 interface CreatePollProps {
   handleCreatePoll: (pollData: any) => Promise<void>;
@@ -24,6 +26,7 @@ const onChange: DatePickerProps['onChange'] = (date, dateString) => {
 
 export default function CreatePoll({ handleCreatePoll, handleTabChange }: CreatePollProps) {
   const [form] = Form.useForm();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [options, setOptions] = useState<PollOption[]>([
     { id: 1, text: "" },
@@ -59,30 +62,46 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
       const durationInMs = endDate.getTime() - currentDate.getTime();
       const durationInDays = Math.ceil(durationInMs / (1000 * 60 * 60 * 24));
 
+      const rewardPerResponse = parseFloat(form.getFieldValue("rewardPerResponse"));
+      const maxResponses = parseFloat(form.getFieldValue("maxResponses"));
+      const targetFund = (rewardPerResponse * maxResponses).toPrecision(12);
+      console.log('target fund', targetFund)
+
       const pollData = {
         ...fieldsValue,
         options: fieldsValue.options.map((item: any) => item.text),
         endDate: endDate,
-        duration: durationInDays // Add the calculated duration
+        duration: durationInDays,
+        targetFund: targetFund.toString(),
       };
 
       console.log('Submitting poll data:', pollData);
       await handleCreatePoll(pollData);
-      if (handleTabChange) {
-        handleTabChange("created-polls");
-      }
+      navigate("/polls/live");
     } catch (error) {
       console.error('Validation failed:', error);
     } finally {
       setLoading(false);
     }
   };
-
-
-  const rewardPerResponse = form.getFieldValue("rewardPerResponse");
-  const maxResponses = form.getFieldValue("maxResponses");
-  const targetFund = rewardPerResponse * maxResponses;
  
+  const selectAfter = (
+    <Select defaultValue="NEON" style={{ width: "auto" }}>
+      <Option value="NEON">NEON</Option>
+    </Select>
+  );
+
+  const formItemLayout = {
+    labelCol: {
+      xs: { span: 24 },
+      sm: { span: 6 },
+    },
+    wrapperCol: {
+      xs: { span: 24 },
+      sm: { span: 14 },
+    },
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl" data-tour="poll-form">
       <Form
@@ -105,6 +124,9 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
             current={current}
             percent={current / (steps.length - 1) * 100}
             items={steps}
+            size="small" labelPlacement="vertical"
+            direction="horizontal"
+            responsive={false}
           />
         </ConfigProvider>
         {/* <div style={contentStyle}>{stepItems[current].content}</div> */}
@@ -126,6 +148,22 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
             style={{ textAlign: 'center' }}
           >
             <Input placeholder="Enter poll description" />
+          </Form.Item>
+          <Form.Item name="category" label="Category" rules={[{ required: true }]}>
+            <Select
+              placeholder="Select a category"
+              allowClear
+            >
+              <Option value="art">Art</Option>
+              <Option value="design">Design</Option>
+              <Option value="tech">Technology</Option>
+              <Option value="defi">DeFi</Option>
+              <Option value="lifestyle">Lifestyle</Option>
+              <Option value="environment">Environment</Option>
+              <Option value="web3">Web3</Option>
+              <Option value="food">Food</Option>
+              <Option value="other">Other</Option>
+            </Select>
           </Form.Item>
           <Form.Item
             label="End Date"
@@ -208,7 +246,14 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
             ]}
             style={{ textAlign: 'center' }}
           >
-            <Input type="number" placeholder="This is the amount in NEONs that responders will receive" />
+            <InputNumber
+              placeholder="Amount in NEONs that responders will receive"
+              min="0.001"
+              step="0.001"
+              addonAfter={selectAfter}
+              stringMode
+              style={{ width: '100%' }}
+            />
           </Form.Item>
           <Form.Item
             label="Max Responses"
@@ -218,7 +263,11 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
             ]}
             style={{ textAlign: 'center' }}
           >
-            <Input type="number" placeholder="This is the limit to the number of responses the poll will gather" />
+            <InputNumber 
+              placeholder="Limit to the number of responses the poll will gather" 
+              min="1"
+              style={{ width: '100%' }}
+            />
           </Form.Item>
           <Form.Item
             label="Min Contribution"
@@ -229,19 +278,13 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
             ]}
             style={{ textAlign: 'center' }}
           >
-            <Input type="number" placeholder="Minimum amount in NEON that funders (if crowdfunding) can contribute" />
-          </Form.Item>
-          <Form.Item
-            label="Target Fund"
-            name="targetFund"
-            tooltip="(in NERO units)"
-            rules={[
-              { required: true, message: 'Please enter target fund' },
-            ]}
-            style={{ textAlign: 'center' }}
-          >
-            <Input readOnly type="number" placeholder="The target fund amount in NEON for this poll's reward pool" 
-              value={targetFund}
+            <InputNumber 
+              placeholder="Minimum amount in NEON that funders (if crowdfunding) can contribute"
+              min="0.001"
+              step="0.001"
+              addonAfter={selectAfter}
+              stringMode
+              style={{ width: '100%' }}
             />
           </Form.Item>
         </Card>

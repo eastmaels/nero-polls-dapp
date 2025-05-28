@@ -17,7 +17,6 @@ import { Input } from "@/components/ui_v3/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui_v3/card"
 import { Badge } from "@/components/ui_v3/badge"
 import { ArrowRight, Users, Trophy, Shield, Coins, Clock, Eye } from "lucide-react"
-import Image from "next/image"
 import LandingPageHeader from "@/pages/landing/landing-header";
 
 const TypewriterText = () => {
@@ -495,7 +494,7 @@ export default function LandingPage() {
                   </div>
                 </div>
               </div>
-              <div className="max-w-md mx-auto">
+              {/* <div className="max-w-md mx-auto">
                 <form onSubmit={handleEmailSubmit} className="flex gap-2">
                   <Input
                     type="email"
@@ -507,7 +506,7 @@ export default function LandingPage() {
                   />
                   <Button className="text-white" type="submit">Get Started</Button>
                 </form>
-              </div>
+              </div> */}
             </div>
           </div>
         </section>

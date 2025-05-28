@@ -10,21 +10,18 @@ import { ethers } from 'ethers';
 
 import LandingPageHeader from "@/pages/landing/landing-header";
 import CreatePoll from "@/pages/simple/create-poll";
+import { PollState } from '@/types/poll';
 
 export default function CreatePollPage() {
   const { AAaddress, isConnected, simpleAccountInstance } = useSignature();
 
   const { execute, waitForUserOpResult, sendUserOp } = useSendUserOp();
-  const config = useConfig(); // Get config to access RPC URL
   const [isLoading, setIsLoading] = useState(false);
   const [userOpHash, setUserOpHash] = useState<string | null>(null);
   const [txStatus, setTxStatus] = useState<string>('');
   const [isPolling, setIsPolling] = useState(false);
 
-  const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
-
-  const handleCreatePoll = async (pollForm: any) => {
+  const handleCreatePoll = async (pollForm: PollState) => {
     if (!isConnected) {
       alert('Please connect your wallet first');
       return;
@@ -42,13 +39,14 @@ export default function CreatePollPage() {
         params: [
           pollForm.subject,
           pollForm.description,
+          pollForm.category,
           pollForm.options,
           ethers.utils.parseEther(pollForm.rewardPerResponse).toString(),
           parseInt(pollForm.duration),
           parseInt(pollForm.maxResponses),
           ethers.utils.parseEther(pollForm.minContribution).toString(),
           ethers.utils.parseEther(pollForm.targetFund).toString(),
-          ethers.constants.AddressZero, // Use address(0) for native ETH
+          ethers.constants.AddressZero,
         ],
         value: 0
       });

@@ -16,7 +16,7 @@ export const ERC20_ABI = [
 
 export const POLLS_DAPP_ABI = [
   // Poll Creation and Management
-  'function createPoll(string subject, string description, string[] options, uint256 rewardPerResponse, uint256 durationDays, uint256 maxResponses, uint256 minContribution, uint256 targetFund, address rewardToken) external payable',
+  'function createPoll(string subject, string description, string category, string[] options, uint256 rewardPerResponse, uint256 durationDays, uint256 maxResponses, uint256 minContribution, uint256 targetFund, address rewardToken) external payable',
   'function updatePoll(uint256 pollId, string subject, string description, uint256 rewardPerResponse, uint256 durationDays, uint256 maxResponses, uint256 minContribution, uint256 targetFund) external payable',
   'function submitResponse(uint256 pollId, string response) external payable',
   'function closePoll(uint256 pollId) external payable',

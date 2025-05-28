@@ -1,18 +1,18 @@
 "use client"
 
-import { useState } from "react"
-import { useSignature, useSendUserOp, useConfig, useEthersSigner } from '@/hooks';
-import { POLLS_DAPP_ABI,  } from '@/constants/abi';
-import { CONTRACT_ADDRESSES } from '@/constants/contracts'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui_v2/card"
-import { Badge } from "@/components/ui_v2/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui_v2/avatar"
-import { Clock, Users, CircleDollarSign } from "lucide-react"
-import { Button, Form, Modal, Space, Input } from 'antd';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui_v2/avatar";
+import { Badge } from "@/components/ui_v2/badge";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui_v2/card";
+import { POLLS_DAPP_ABI, } from '@/constants/abi';
+import { CONTRACT_ADDRESSES } from '@/constants/contracts';
+import { useSendUserOp, useSignature } from '@/hooks';
 import ManagePoll from "@/pages/simple/manage-poll";
 import { PollState } from "@/types/poll";
-import { ethers } from 'ethers';
 import { getCompressedAddress } from "@/utils/addressUtil";
+import { Button, Form, InputNumber, Modal, Select, Space } from 'antd';
+import { ethers } from 'ethers';
+import { CircleDollarSign, Clock, Users } from "lucide-react";
+import { useState } from "react";
 
 export default function ManagePolls({ AAaddress, handleTabChange, polls, fetchPolls }:
   { AAaddress: string, handleTabChange: (tab: string) => void, polls: PollState[], fetchPolls: () => void }) {
@@ -60,6 +60,12 @@ function calculateTimeLeft(endTime: string | Date): string {
 function PollCard({ poll, type, fetchPolls, AAaddress, }: 
   { poll: PollState, type: string, fetchPolls: () => void, AAaddress?: string, }) {
   
+  const selectAfter = (
+    <Select defaultValue="NEON" style={{ width: "auto" }}>
+      <Select.Option value="NEON">NEON</Select.Option>
+    </Select>
+  );
+
   const { isConnected, } = useSignature();
   const { execute, waitForUserOpResult, sendUserOp } = useSendUserOp();
   const [userOpHash, setUserOpHash] = useState<string | null>(null);
@@ -725,7 +731,14 @@ function PollCard({ poll, type, fetchPolls, AAaddress, }:
             rules={[{ required: true, message: 'Please enter amount to contribute' }]}
             style={{ textAlign: 'center' }}
           >
-            <Input placeholder="Amount in ETH" />
+            <InputNumber
+              placeholder="Amount in ETH"
+              min="0.001"
+              step="0.001"
+              addonAfter={selectAfter}
+              stringMode
+              style={{ width: '100%' }}
+            />
           </Form.Item>
         </Form>
       </Modal>

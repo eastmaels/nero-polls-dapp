@@ -2,124 +2,21 @@
 
 import { useState, useEffect } from "react"
 import { Link } from 'react-router-dom'
-import { Button } from "@/components/ui_v3/button"
+import { Tag, Modal, Space, Button } from "antd"
 import { Input } from "@/components/ui_v3/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui_v3/card"
-import { Badge } from "@/components/ui_v3/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui_v3/select"
 import { Search, Users, Trophy, Clock, Eye, Filter } from "lucide-react"
 
-import { useSignature, useConfig } from '@/hooks';
+import { useSignature, useConfig, useSendUserOp } from '@/hooks';
 import { POLLS_DAPP_ABI,  } from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts';
 import { ethers } from 'ethers';
 import { convertTimestampToDate } from '@/utils/format';
 import { PollState } from '@/types/poll';
 import LandingPageHeader from "@/pages/landing/landing-header"
+import { calculateTimeLeft } from "@/utils/timeUtils"
 
-
-const allPolls = [
-  {
-    id: 1,
-    title: "Best Logo Design Contest",
-    description: "Vote for the most creative logo design submission",
-    participants: 156,
-    timeLeft: "2 days",
-    prize: "0.5 ETH",
-    category: "Design",
-    status: "Active",
-  },
-  {
-    id: 2,
-    title: "Favorite Programming Language",
-    description: "What's your go-to programming language for web development?",
-    participants: 342,
-    timeLeft: "5 days",
-    prize: "0.2 ETH",
-    category: "Tech",
-    status: "Active",
-  },
-  {
-    id: 3,
-    title: "Best Coffee Shop in NYC",
-    description: "Help us find the best coffee shop in New York City",
-    participants: 89,
-    timeLeft: "1 day",
-    prize: "0.1 ETH",
-    category: "Lifestyle",
-    status: "Ending Soon",
-  },
-  {
-    id: 4,
-    title: "Crypto Art Showcase",
-    description: "Vote for the most innovative crypto art piece",
-    participants: 234,
-    timeLeft: "3 days",
-    prize: "1.0 ETH",
-    category: "Art",
-    status: "Active",
-  },
-  {
-    id: 5,
-    title: "Best DeFi Protocol",
-    description: "Which DeFi protocol do you trust the most?",
-    participants: 567,
-    timeLeft: "4 days",
-    prize: "0.3 ETH",
-    category: "DeFi",
-    status: "Active",
-  },
-  {
-    id: 6,
-    title: "Sustainable Energy Solutions",
-    description: "Vote for the most promising green technology",
-    participants: 123,
-    timeLeft: "6 days",
-    prize: "0.4 ETH",
-    category: "Environment",
-    status: "Active",
-  },
-  {
-    id: 7,
-    title: "Best Mobile App UI",
-    description: "Which mobile app has the best user interface design?",
-    participants: 298,
-    timeLeft: "2 days",
-    prize: "0.25 ETH",
-    category: "Design",
-    status: "Active",
-  },
-  {
-    id: 8,
-    title: "Future of Web3",
-    description: "What do you think is the next big thing in Web3?",
-    participants: 445,
-    timeLeft: "7 days",
-    prize: "0.6 ETH",
-    category: "Web3",
-    status: "Active",
-  },
-  {
-    id: 9,
-    title: "Best Pizza in Chicago",
-    description: "Help settle the debate about Chicago's best pizza",
-    participants: 201,
-    timeLeft: "Ended",
-    prize: "0.15 ETH",
-    category: "Food",
-    status: "Ended",
-  },
-  {
-    id: 10,
-    title: "AI Tool of the Year",
-    description: "Which AI tool has been most useful this year?",
-    participants: 389,
-    timeLeft: "3 days",
-    prize: "0.35 ETH",
-    category: "Tech",
-    status: "Active",
-  },
-]
 
 export default function LivePollsPage() {
   
@@ -132,7 +29,7 @@ export default function LivePollsPage() {
   const config = useConfig(); // Get config to access RPC URL
   const [isLoading, setIsLoading] = useState(false);
   const [txStatus, setTxStatus] = useState<string>('');
-  const [polls, setPolls] = useState<any[]>([]);
+  const [polls, setPolls] = useState<PollState[]>([]);
 
   useEffect(() => {
     if (isConnected) {
@@ -234,10 +131,10 @@ export default function LivePollsPage() {
       setIsLoading(false);
     }
   };
-
+  console.log('polls', polls)
   const filteredPolls = polls.filter((poll) => {
     const matchesSearch =
-      poll.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      poll.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
       poll.description.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCategory = categoryFilter === "all" || poll.category === categoryFilter
     const matchesStatus = statusFilter === "all" || poll.status === statusFilter
@@ -303,51 +200,20 @@ export default function LivePollsPage() {
         {/* Results Count */}
         <div className="mb-6">
           <p className="text-muted-foreground">
-            Showing {filteredPolls.length} of {allPolls.length} polls
+            Showing {filteredPolls.length} of {polls.length} polls
           </p>
         </div>
 
         {/* Polls Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPolls.map((poll) => (
-            <Card key={poll.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex gap-2">
-                    <Badge variant="secondary">{poll.category}</Badge>
-                    <Badge
-                      variant={
-                        poll.status === "Active" ? "default" : poll.status === "Ending Soon" ? "destructive" : "outline"
-                      }
-                    >
-                      {poll.status}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Clock className="h-3 w-3 mr-1" />
-                    {poll.timeLeft}
-                  </div>
-                </div>
-                <CardTitle className="text-lg">{poll.title}</CardTitle>
-                <CardDescription>{poll.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-between items-center mb-4">
-                  <div className="flex items-center text-sm">
-                    <Users className="h-4 w-4 mr-1" />
-                    {poll.participants} participants
-                  </div>
-                  <div className="flex items-center text-sm font-semibold text-primary">
-                    <Trophy className="h-4 w-4 mr-1" />
-                    {poll.prize}
-                  </div>
-                </div>
-                <Button className="w-full" variant={poll.status === "Ended" ? "outline" : "default"}>
-                  <Eye className="h-4 w-4 mr-2" />
-                  {poll.status === "Ended" ? "View Results" : "View Poll"}
-                </Button>
-              </CardContent>
-            </Card>
+            <PollCard
+              key={poll.id}
+              poll={poll}
+              type="active"
+              fetchPolls={fetchPolls}
+              AAaddress={AAaddress}
+            />
           ))}
         </div>
 
@@ -356,7 +222,7 @@ export default function LivePollsPage() {
           <div className="text-center py-12">
             <p className="text-muted-foreground text-lg mb-4">No polls found matching your criteria</p>
             <Button
-              className="text-white"
+              color="default"
               onClick={() => {
                 setSearchTerm("")
                 setCategoryFilter("all")
@@ -374,7 +240,7 @@ export default function LivePollsPage() {
             <h3 className="text-2xl font-bold mb-4">Don't see what you're looking for?</h3>
             <p className="text-muted-foreground mb-6">Create your own poll and start earning from participant fees</p>
             <Link to="/polls/new">
-              <Button size="lg" className="text-white">
+              <Button color="default">
                 Create Your Poll
               </Button>
             </Link>
@@ -383,4 +249,137 @@ export default function LivePollsPage() {
       </div>
     </div>
   )
+
+  function PollCard({ poll, fetchPolls, AAaddress }:
+    { poll: any, type: string, fetchPolls: () => void, AAaddress: string, }) {
+
+      const { isConnected, } = useSignature();
+      const { execute, waitForUserOpResult } = useSendUserOp();
+      const [userOpHash, setUserOpHash] = useState<string | null>(null);
+      const [txStatus, setTxStatus] = useState<string>('');
+      const [isPolling, setIsPolling] = useState(false);
+      const [isVoting, setIsVoting] = useState(false);
+    
+      const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
+      const isVoted = poll.responsesWithAddress?.some(response => response.address === AAaddress);
+    
+      const handleOptionVote = async (option) => {
+        if (!isConnected) {
+          alert('Please connect your wallet first');
+          return;
+        }
+    
+        setIsVoting(true);
+        setUserOpHash(null);
+        setTxStatus('');
+    
+        try {
+          await execute({
+            function: 'submitResponse',
+            contractAddress: CONTRACT_ADDRESSES.dpollsContract,
+            abi: POLLS_DAPP_ABI, // Use the specific ABI with mint function
+            params: [
+              poll.id,
+              option.text,
+            ],
+            value: 0,
+          });
+    
+          const result = await waitForUserOpResult();
+          setUserOpHash(result.userOpHash);
+          setIsPolling(true);
+    
+          if (result.result === true) {
+            setIsPolling(false);
+            fetchPolls();
+          } else if (result.transactionHash) {
+            setTxStatus('Transaction hash: ' + result.transactionHash);
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          setTxStatus('An error occurred');
+        } finally {
+          setIsVoting(false);
+          setIsVoteModalOpen(false);
+        }
+    
+      };
+    
+      const computePercentage = (responses: string[], option: string) => {
+        if (responses?.length === 0) {
+          return 0;
+        }
+        const totalResponses = responses?.length;
+        const optionCount = responses?.filter(response => response === option).length;
+        return Math.floor((optionCount / totalResponses) * 100);
+      }
+    
+      const modOptions = poll.options.map((option) => {
+        return { text: option, percentage: computePercentage(poll.responses, option) };
+      });
+
+    return (
+      <Card key={poll.id} className="hover:shadow-lg transition-shadow">
+        <CardHeader>
+          <div className="flex justify-between items-start mb-2">
+            <div className="flex gap-2">
+              <Tag>{poll.category}</Tag>
+              <Tag
+                color={
+                  poll.status === "new" ? "#108ee9" : poll.status === "for-claiming" ? "#f50" : "#87d068"
+                }
+              >
+                {poll.status}
+              </Tag>
+            </div>
+            <div className="flex items-center text-sm text-muted-foreground">
+              <Clock className="h-3 w-3 mr-1" />
+              <span>{poll.endTime ? calculateTimeLeft(poll.endTime) : `${poll.duration} days`}</span>
+            </div>
+          </div>
+          <CardTitle className="text-lg">{poll.subject}</CardTitle>
+          <CardDescription>{poll.description}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center text-sm">
+              <Users className="h-4 w-4 mr-1" />
+              <span>{poll.totalResponses} / {poll.maxResponses} participants</span>
+            </div>
+            <div className="flex items-center text-sm font-semibold text-primary">
+              <Trophy className="h-4 w-4 mr-1" />
+              <span>{ethers.utils.formatEther(poll.funds || '0')} NERO </span>
+            </div>
+          </div>
+          <Button
+            color="default"
+            className="w-full"
+            onClick={() => setIsVoteModalOpen(true)}
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            {poll.status === "closed" ? "View Results" : "Respond to Poll"}
+          </Button>
+        </CardContent>
+        <Modal
+          title={poll.subject || poll.title || poll.question}
+          open={isVoteModalOpen}
+          onCancel={() => setIsVoteModalOpen(false)}
+          footer={null}
+          maskClosable={false}
+        >
+          <Space direction="vertical" size="middle">
+            {modOptions.map((option, index) => (
+              <Button
+                key={index} block onClick={() => handleOptionVote(option)}
+                loading={isVoting}
+                disabled={isVoted}
+              >
+                {option.text}
+              </Button>
+            ))}
+          </Space>
+        </Modal>
+      </Card>
+    )
+  }
 }

@@ -10,14 +10,15 @@ export interface PollState {
   status: string;
   createdAt: Date;
   options: string[];
-  rewardPerResponse: number;
-  maxResponses: number;
+  rewardPerResponse: string;
+  maxResponses: string;
+  duration: string;
   endTime: Date;
   isOpen: boolean;
   totalResponses: number;
   funds: number;
-  minContribution: number;
-  targetFund: number;
+  minContribution: string;
+  targetFund: string;
   responses: string[];
   responsesWithAddress: {
     address: string;
