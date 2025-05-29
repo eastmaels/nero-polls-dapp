@@ -61,11 +61,13 @@ contract PollsDApp is Ownable {
         uint256 maxResponses;
         uint256 durationDays;
         uint256 minContribution;
+        string fundingType;
         uint256 targetFund;
         uint256 endTime;
         uint256 totalResponses;
         uint256 funds;
-        address rewardToken; // Address of the ERC20 token for rewards
+        address rewardToken;
+        string rewardDistribution; 
     }
 
     struct PollContent {
@@ -74,6 +76,7 @@ contract PollsDApp is Ownable {
         string description;
         string category;
         string status;
+        string viewType;
         string[] options;
         bool isOpen;
     }
@@ -90,17 +93,37 @@ contract PollsDApp is Ownable {
         string description;
         string category;
         string status;
+        string viewType;
         string[] options;
         uint256 rewardPerResponse;
         uint256 maxResponses;
         uint256 durationDays;
         uint256 minContribution;
+        string fundingType;
         uint256 targetFund;
         uint256 endTime;
         bool isOpen;
         uint256 totalResponses;
         uint256 funds;
         address rewardToken;
+        string rewardDistribution;
+    }
+
+    struct CreatePollParams {
+        string subject;
+        string description;
+        string category;
+        string viewType;
+        string[] options;
+        uint256 rewardPerResponse;
+        uint256 durationDays;
+        uint256 maxResponses;
+        uint256 minContribution;
+        string fundingType;
+        bool isOpenImmediately;
+        uint256 targetFund;
+        address rewardToken;
+        string rewardDistribution;
     }
 
     uint256 public pollCounter;
@@ -118,14 +141,17 @@ contract PollsDApp is Ownable {
         string memory subject,
         string memory description,
         string memory category,
-        string[] memory options
+        string memory viewType,
+        string[] memory options,
+        string memory status
     ) private pure returns (PollContent memory) {
         return PollContent({
             creator: creator,
             subject: subject,
             description: description,
             category: category,
-            status: "new",
+            status: status,
+            viewType: viewType,
             options: options,
             isOpen: false
         });
@@ -136,8 +162,10 @@ contract PollsDApp is Ownable {
         uint256 durationDays,
         uint256 maxResponses,
         uint256 minContribution,
+        string memory fundingType,
         uint256 targetFund,
-        address rewardToken
+        address rewardToken,
+        string memory rewardDistribution
     ) private view returns (PollSettings memory) {
         require(rewardToken == address(0) || whitelistedTokens[rewardToken], "Token not whitelisted");
         return PollSettings({
@@ -145,42 +173,96 @@ contract PollsDApp is Ownable {
             maxResponses: maxResponses,
             durationDays: durationDays,
             minContribution: minContribution,
+            fundingType: fundingType,
             targetFund: targetFund,
             endTime: block.timestamp + (durationDays * 1 days),
             totalResponses: 0,
             funds: 0,
-            rewardToken: rewardToken
+            rewardToken: rewardToken,
+            rewardDistribution: rewardDistribution
         });
+    }
+
+    function _validateCreatePollParams(CreatePollParams memory params) private pure {
+        require(params.options.length >= 2, "Min 2 options");
+        require(params.durationDays > 0, "Invalid duration");
+        require(params.minContribution > 0, "Min contribution > 0");
+        require(params.targetFund >= params.minContribution, "Target >= min");
+        require(params.targetFund >= params.rewardPerResponse * params.maxResponses, "Target >= rewards");
+    }
+
+    function _validateFunding(CreatePollParams memory params) private view {
+        require(params.rewardToken == address(0) || whitelistedTokens[params.rewardToken], "Token not whitelisted");
+        if (params.isOpenImmediately) {
+            require(params.rewardToken == address(0), "Immediate open only supports native token");
+        }
     }
 
     function createPoll(
         string memory subject,
         string memory description,
         string memory category,
+        string memory viewType,
         string[] memory options,
         uint256 rewardPerResponse,
         uint256 durationDays,
         uint256 maxResponses,
         uint256 minContribution,
+        string memory fundingType,
+        bool isOpenImmediately,
         uint256 targetFund,
-        address rewardToken
+        address rewardToken,
+        string memory rewardDistribution
     ) external payable {
-        require(options.length >= 2, "Min 2 options");
-        require(durationDays > 0, "Invalid duration");
-        require(minContribution > 0, "Min contribution > 0");
-        require(targetFund >= minContribution, "Target >= min");
-        require(targetFund >= rewardPerResponse * maxResponses, "Target >= rewards");
-        require(rewardToken == address(0) || whitelistedTokens[rewardToken], "Token not whitelisted");
+        bool isSplitReward = keccak256(bytes(rewardDistribution)) == keccak256(bytes("split"));
+        CreatePollParams memory params = CreatePollParams({
+            subject: subject,
+            description: description,
+            category: category,
+            viewType: viewType,
+            options: options,
+            rewardPerResponse: isSplitReward ? 0 : rewardPerResponse,
+            durationDays: durationDays,
+            maxResponses: maxResponses,
+            minContribution: minContribution,
+            fundingType: fundingType,
+            isOpenImmediately: isOpenImmediately,
+            targetFund: isSplitReward ? targetFund : 0,
+            rewardToken: rewardToken,
+            rewardDistribution: rewardDistribution
+        });
 
-        PollContent memory content = _initializePollContent(msg.sender, subject, description, category, options);
-        PollSettings memory settings = _initializePollSettings(
-            rewardPerResponse,
-            durationDays,
-            maxResponses,
-            minContribution,
-            targetFund,
-            rewardToken
+        _validateCreatePollParams(params);
+        _validateFunding(params);
+
+        if (params.isOpenImmediately && params.rewardToken == address(0)) {
+            require(msg.value == params.targetFund, "Insufficient funds");
+        }
+
+        PollContent memory content = _initializePollContent(
+            msg.sender,
+            params.subject,
+            params.description,
+            params.category,
+            params.viewType,
+            params.options,
+            params.isOpenImmediately ? "open" : "new"
         );
+
+        PollSettings memory settings = _initializePollSettings(
+            params.rewardPerResponse,
+            params.durationDays,
+            params.maxResponses,
+            params.minContribution,
+            params.fundingType,
+            params.targetFund,
+            params.rewardToken,
+            params.rewardDistribution
+        );
+
+        if (params.isOpenImmediately && params.rewardToken == address(0)) {
+            settings.funds = msg.value;
+        }
 
         Poll storage p = polls[pollCounter];
         p.content = content;
@@ -189,7 +271,7 @@ contract PollsDApp is Ownable {
         pollIds.push(pollCounter);
         userPolls[msg.sender].push(p);
 
-        emit PollCreated(pollCounter, msg.sender, subject);
+        emit PollCreated(pollCounter, msg.sender, params.subject);
         pollCounter++;
     }
 
@@ -215,7 +297,7 @@ contract PollsDApp is Ownable {
         p.content.subject = subject;
         p.content.description = description;
 
-        p.settings.rewardPerResponse = rewardPerResponse;
+        //p.settings.rewardPerResponse = rewardPerResponse;
         p.settings.maxResponses = maxResponses;
         p.settings.durationDays = durationDays;
         p.settings.minContribution = minContribution;
@@ -313,17 +395,20 @@ contract PollsDApp is Ownable {
             description: p.content.description,
             category: p.content.category,
             status: p.content.status,
+            viewType: p.content.viewType,
             options: p.content.options,
             rewardPerResponse: p.settings.rewardPerResponse,
             maxResponses: p.settings.maxResponses,
             durationDays: p.settings.durationDays,
             minContribution: p.settings.minContribution,
+            fundingType: p.settings.fundingType,
             targetFund: p.settings.targetFund,
             endTime: p.settings.endTime,
             isOpen: p.content.isOpen,
             totalResponses: p.settings.totalResponses,
             funds: p.settings.funds,
-            rewardToken: p.settings.rewardToken
+            rewardToken: p.settings.rewardToken,
+            rewardDistribution: p.settings.rewardDistribution
         });
     }
 
