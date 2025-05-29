@@ -8,7 +8,7 @@ import { CONTRACT_ADDRESSES } from '@/constants/contracts';
 import { useSendUserOp, useSignature } from '@/hooks';
 import { PollState } from "@/types/poll";
 import { getCompressedAddress } from "@/utils/addressUtil";
-import { Button, Form, Input, Modal } from 'antd';
+import { Button, Form, Input, InputNumber, Modal, Select } from 'antd';
 import { ethers } from 'ethers';
 import { CircleDollarSign, Clock, Users } from "lucide-react";
 import { useState } from "react";
@@ -62,7 +62,12 @@ function calculateTimeLeft(endTime: string | Date): string {
 function PollCard({ poll, type, fetchPolls }:
   { poll: PollState, type: string, fetchPolls: () => void }) {
 
-    console.log('poll', poll)
+  console.log('poll', poll)
+  const selectAfter = (
+    <Select defaultValue="NEON" style={{ width: "auto" }}>
+      <Select.Option value="NEON">NEON</Select.Option>
+    </Select>
+  );
 
   const { isConnected, } = useSignature();
   const { execute, waitForUserOpResult } = useSendUserOp();
@@ -228,7 +233,14 @@ function PollCard({ poll, type, fetchPolls }:
             rules={[{ required: true, message: 'Please enter amount to contribute' }]}
             style={{ textAlign: 'center' }}
           >
-            <Input placeholder="Amount in ETH" />
+            <InputNumber
+              placeholder="Amount in ETH"
+              min="0.001"
+              step="0.001"
+              addonAfter={selectAfter}
+              stringMode
+              style={{ width: '100%' }}
+            />
           </Form.Item>
         </Form>
       </Modal>

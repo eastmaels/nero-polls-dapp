@@ -16,7 +16,7 @@ export const ERC20_ABI = [
 
 export const POLLS_DAPP_ABI = [
   // Poll Creation and Management
-  'function createPoll(string subject, string description, string[] options, uint256 rewardPerResponse, uint256 durationDays, uint256 maxResponses, uint256 minContribution, uint256 targetFund, address rewardToken) external payable',
+  'function createPoll(string subject, string description, string category, string[] options, uint256 rewardPerResponse, uint256 durationDays, uint256 maxResponses, uint256 minContribution, uint256 targetFund, address rewardToken) external payable',
   'function updatePoll(uint256 pollId, string subject, string description, uint256 rewardPerResponse, uint256 durationDays, uint256 maxResponses, uint256 minContribution, uint256 targetFund) external payable',
   'function submitResponse(uint256 pollId, string response) external payable',
   'function closePoll(uint256 pollId) external payable',
@@ -41,7 +41,7 @@ export const POLLS_DAPP_ABI = [
   'function getOptions(uint256 pollId) view returns (string[])',
   'function getPollStatus(uint256 pollId) view returns (bool isOpen, uint256 endTime, uint256 totalResponses)',
   'function getAllPollIds() view returns (uint256[])',
-  'function getPoll(uint256 pollId) view returns (tuple(address creator, string subject, string description, string status, string[] options, uint256 rewardPerResponse, uint256 maxResponses, uint256 durationDays, uint256 minContribution, uint256 targetFund, uint256 endTime, bool isOpen, uint256 totalResponses, uint256 funds, address rewardToken))',
+  'function getPoll(uint256 pollId) view returns (tuple(address creator, string subject, string description, string category, string status, string[] options, uint256 rewardPerResponse, uint256 maxResponses, uint256 durationDays, uint256 minContribution, uint256 targetFund, uint256 endTime, bool isOpen, uint256 totalResponses, uint256 funds, address rewardToken))',
   'function getPollResponses(uint256 pollId) view returns (tuple(address responder, string response, uint256 weight, uint256 timestamp, bool isClaimed, uint256 reward)[])',
   'function getUserPolls(address user) view returns (tuple(tuple(address creator, string subject, string description, string status, string[] options, bool isOpen) content, tuple(uint256 rewardPerResponse, uint256 maxResponses, uint256 durationDays, uint256 minContribution, uint256 targetFund, uint256 endTime, uint256 totalResponses, uint256 funds, address rewardToken) settings, tuple(address responder, string response, uint256 weight, uint256 timestamp, bool isClaimed, uint256 reward)[] responses)[])',
   'function getUserActivePolls(address user) view returns (tuple(tuple(address creator, string subject, string description, string status, string[] options, bool isOpen) content, tuple(uint256 rewardPerResponse, uint256 maxResponses, uint256 durationDays, uint256 minContribution, uint256 targetFund, uint256 endTime, uint256 totalResponses, uint256 funds, address rewardToken) settings, tuple(address responder, string response, uint256 weight, uint256 timestamp, bool isClaimed, uint256 reward)[] responses)[])',

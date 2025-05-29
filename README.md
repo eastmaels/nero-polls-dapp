@@ -85,6 +85,8 @@ yarn dev
 ### 3. Deployment (vercel)
 
 ```bash
+vercel project
+vercel link --yes --project dpolls
 yarn build:demo
 vercel build --prod
 vercel --prebuilt --prod
