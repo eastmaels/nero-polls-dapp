@@ -9,6 +9,7 @@ export interface PollState {
   category: string;
   status: string;
   createdAt: Date;
+  viewType: string;
   options: string[];
   rewardPerResponse: string;
   maxResponses: string;
@@ -18,6 +19,9 @@ export interface PollState {
   totalResponses: number;
   funds: number;
   minContribution: string;
+  fundingType: string;
+  openImmediately: boolean;
+  rewardDistribution: string;
   targetFund: string;
   responses: string[];
   responsesWithAddress: {
