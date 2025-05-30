@@ -12,12 +12,16 @@ import { ethers } from 'ethers';
 import { convertTimestampToDate } from '@/utils/format';
 import { PollState } from '@/types/poll';
 
+import { Tag } from "antd";
 import { Button } from "@/components/ui_v3/button"
-import { Input } from "@/components/ui_v3/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui_v3/card"
 import { Badge } from "@/components/ui_v3/badge"
 import { ArrowRight, Users, Trophy, Shield, Coins, Clock, Eye } from "lucide-react"
 import LandingPageHeader from "@/pages/landing/landing-header";
+import { PollModal } from "@/components/poll-modal";
+import { getRandomValues } from "crypto";
+import { getRandomBoolean } from "@/utils/booleanUtils";
+import { calculateTimeLeft } from "@/utils";
 
 const TypewriterText = () => {
   const words = ["businesses", "surveys", "art contests", "debates"]
@@ -97,10 +101,10 @@ const AnimatedSection = ({ children, className = "" }: { children: React.ReactNo
   )
 }
 
-const featuredPolls = [
+let featuredPolls: any[] = [
   {
     id: 1,
-    title: "Best Logo Design Contest",
+    subject: "Best Logo Design Contest",
     description: "Vote for the most creative logo design",
     participants: 156,
     timeLeft: "2 days",
@@ -109,7 +113,7 @@ const featuredPolls = [
   },
   {
     id: 2,
-    title: "Favorite Programming Language",
+    subject: "Favorite Programming Language",
     description: "What's your go-to programming language?",
     participants: 342,
     timeLeft: "5 days",
@@ -118,7 +122,7 @@ const featuredPolls = [
   },
   {
     id: 3,
-    title: "Best Coffee Shop in NYC",
+    subject: "Best Coffee Shop in NYC",
     description: "Help us find the best coffee in the city",
     participants: 89,
     timeLeft: "1 day",
@@ -178,13 +182,31 @@ export default function LandingPage() {
   const config = useConfig(); // Get config to access RPC URL
   const [isLoading, setIsLoading] = useState(false);
   const [txStatus, setTxStatus] = useState<string>('');
-  const [polls, setPolls] = useState<any[]>([]);
+  const [polls, setPolls] = useState<PollState[]>([]);
   const [email, setEmail] = useState("")
+  const [selectedPoll, setSelectedPoll] = useState<any | null>(null)
+  const [isPollModalOpen, setIsPollModalOpen] = useState(false)
+  const [featureFlagNew, setFeatureFlagNew] = useState(true);
+
+  if (featureFlagNew) {
+    featuredPolls = polls.filter(poll => poll.isFeatured)
+    console.log('featuredPollsNew', featuredPolls);
+  }
 
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     console.log("Email submitted:", email)
     setEmail("")
+  }
+
+  const handleViewPoll = (poll: any) => {
+    setSelectedPoll(poll)
+    setIsPollModalOpen(true)
+  }
+
+  const closePollModal = () => {
+    setIsPollModalOpen(false)
+    setSelectedPoll(null)
   }
 
   useEffect(() => {
@@ -217,6 +239,7 @@ export default function LandingPage() {
             try {
               // Get poll details using the polls function
               const pollDetails = await pollsContract.getPoll(pollId);
+              console.log('pollDetails', pollDetails)
               const pollResponses = await pollsContract.getPollResponses(pollId);
               const modPollResponses = pollResponses?.map((response: any) => {
                 return response.response
@@ -239,6 +262,7 @@ export default function LandingPage() {
                 id: pollId,
                 creator: pollDetails.creator,
                 subject: pollDetails.subject,
+                category: pollDetails.category,
                 description: pollDetails.description,
                 status: pollDetails.status,
                 createdAt: new Date(Number(pollDetails.endTime) * 1000 - Number(pollDetails.durationDays) * 24 * 60 * 60 * 1000),
@@ -247,6 +271,7 @@ export default function LandingPage() {
                 maxResponses: pollDetails.maxResponses.toString(),
                 endTime: new Date(Number(pollDetails.endTime) * 1000),
                 isOpen: pollDetails.isOpen,
+                isFeatured: true || getRandomBoolean(),
                 totalResponses: pollDetails.totalResponses.toString(),
                 funds: pollDetails.funds,
                 minContribution: pollDetails.minContribution,
@@ -331,31 +356,51 @@ export default function LandingPage() {
               <p className="text-muted-foreground text-lg">Join active polls and contests happening right now</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-              {featuredPolls.map((poll) => (
+              {featuredPolls.map((poll: any) => (
                 <Card key={poll.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex justify-between items-start mb-2">
-                      <Badge variant="secondary">{poll.category}</Badge>
+                      <Tag
+                        color={
+                          poll.status === "new" ? "#108ee9" : poll.status === "for-claiming" ? "#f50" : "#87d068"
+                        }
+                      >
+                        {poll.category}
+                      </Tag>
                       <div className="flex items-center text-sm text-muted-foreground">
                         <Clock className="h-3 w-3 mr-1" />
-                        {poll.timeLeft}
+                        <span>
+                          {featureFlagNew ? 
+                            poll.endTime && calculateTimeLeft(poll.endTime)
+                            :
+                            poll.timeLeft
+                          }
+                        </span>
                       </div>
                     </div>
-                    <CardTitle className="text-lg">{poll.title}</CardTitle>
+                    <CardTitle className="text-lg">{poll.subject}</CardTitle>
                     <CardDescription>{poll.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="flex justify-between items-center mb-4">
                       <div className="flex items-center text-sm">
                         <Users className="h-4 w-4 mr-1" />
-                        {poll.participants} participants
+                        {featureFlagNew ? 
+                          poll.responses.length
+                          :
+                          poll.participants
+                        } participants
                       </div>
                       <div className="flex items-center text-sm font-semibold text-primary">
                         <Trophy className="h-4 w-4 mr-1" />
-                        {poll.prize}
+                        {featureFlagNew ? 
+                          parseFloat(ethers.utils.formatEther(poll.targetFund || '0'))
+                          :
+                          poll.prize
+                        }
                       </div>
                     </div>
-                    <Button className="w-full" variant="outline">
+                    <Button className="w-full" variant="outline" onClick={() => handleViewPoll(poll)}>
                       <Eye className="h-4 w-4 mr-2" />
                       View Poll
                     </Button>
@@ -664,6 +709,10 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+      {/* Poll Modal */}
+      <PollModal
+        featureFlagNew={featureFlagNew} 
+        poll={selectedPoll} isOpen={isPollModalOpen} onClose={closePollModal} />
     </div>
   )
 }
