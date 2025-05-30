@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react";
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { POLLS_DAPP_ABI, } from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts';
@@ -15,9 +15,8 @@ import { ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
 
 import PollStep1 from "@/components/poll-steps/new-poll-step1";
 import PollStep2 from "@/components/poll-steps/new-poll-step2";
-import PollStep3 from "@/components/poll-steps/new-poll-step3";
-import LandingPageHeader from "@/pages/landing/landing-header";
 import { PollState } from '@/types/poll';
+import PollStep3 from "../poll-steps/new-poll-step3";
 
 const STEPS = [
   { id: 1, title: "Content", description: "Question, description & duration" },
@@ -25,7 +24,12 @@ const STEPS = [
   { id: 3, title: "Settings", description: "Funding, rewards & limits" },
 ]
 
-export default function CreatePollPage() {
+interface NewPollModalProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+export default function NewPollModal({ isOpen, onClose }: NewPollModalProps) {
   const { AAaddress, isConnected, simpleAccountInstance } = useSignature();
   const navigate = useNavigate();
 
@@ -201,99 +205,80 @@ export default function CreatePollPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <LandingPageHeader />
-
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Back Button */}
-        <Link to="/polls/live" className="inline-flex items-center text-muted-foreground hover:text-foreground mb-6">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Live Polls
-        </Link>
-
-        {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">Create New Poll</h1>
-          <p className="text-muted-foreground text-lg">
-            Set up your poll or contest and start earning from participant fees
-          </p>
-        </div>
-
-        {/* Progress Indicator */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            {STEPS.map((step, index) => (
-              <div key={step.id} className="flex items-center">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${currentStep === step.id
-                      ? "bg-primary text-primary-foreground text-white"
-                      : currentStep > step.id
-                        ? "bg-green-500 text-white"
-                        : "bg-muted text-muted-foreground"
-                    }`}
-                >
-                  {currentStep > step.id ? <CheckCircle className="h-4 w-4" /> : step.id}
-                </div>
-                {index < STEPS.length - 1 && (
-                  <div className={`h-0.5 w-16 md:w-32 mx-2 ${currentStep > step.id ? "bg-green-500" : "bg-muted"}`} />
-                )}
+      {/* Progress Indicator */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          {STEPS.map((step, index) => (
+            <div key={step.id} className="flex items-center">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${currentStep === step.id
+                    ? "bg-primary text-primary-foreground text-white"
+                    : currentStep > step.id
+                      ? "bg-green-500 text-white"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+              >
+                {currentStep > step.id ? <CheckCircle className="h-4 w-4" /> : step.id}
               </div>
-            ))}
-          </div>
-          <div className="text-center">
-            <h2 className="text-xl font-semibold">{STEPS[currentStep - 1].title}</h2>
-            <p className="text-muted-foreground">{STEPS[currentStep - 1].description}</p>
-          </div>
-          <Progress value={(currentStep / STEPS.length) * 100} className="mt-4" />
+              {index < STEPS.length - 1 && (
+                <div className={`h-0.5 w-16 md:w-32 mx-2 ${currentStep > step.id ? "bg-green-500" : "bg-muted"}`} />
+              )}
+            </div>
+          ))}
         </div>
+        <div className="text-center">
+          <h2 className="text-xl font-semibold">{STEPS[currentStep - 1].title}</h2>
+          <p className="text-muted-foreground">{STEPS[currentStep - 1].description}</p>
+        </div>
+        <Progress value={(currentStep / STEPS.length) * 100} className="mt-4" />
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Step Content */}
-          <div className="min-h-[500px]">{renderStepContent()}</div>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Step Content */}
+        <div className="min-h-[500px]">{renderStepContent()}</div>
 
-          {/* Navigation Buttons */}
-          <div className="flex justify-between pt-6 border-t">
+        {/* Navigation Buttons */}
+        <div className="flex justify-between pt-6 border-t">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={prevStep}
+            disabled={currentStep === 1}
+            className="flex items-center"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Previous
+          </Button>
+
+          {currentStep === STEPS.length ? (
+            <Button type="submit" className="flex items-center text-white">
+              Create Poll
+              <CheckCircle className="h-4 w-4 ml-2" />
+            </Button>
+          ) : (
             <Button
               type="button"
-              variant="outline"
-              onClick={prevStep}
-              disabled={currentStep === 1}
-              className="flex items-center"
+              onClick={nextStep}
+              disabled={!isStepValid(currentStep)}
+              className="flex items-center text-white"
             >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Previous
+              Next
+              <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
-
-            {currentStep === STEPS.length ? (
-              <Button type="submit" className="flex items-center text-white">
-                Create Poll
-                <CheckCircle className="h-4 w-4 ml-2" />
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                onClick={nextStep}
-                disabled={!isStepValid(currentStep)}
-                className="flex items-center text-white"
-              >
-                Next
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            )}
-          </div>
-
-          {/* Step Validation Info */}
-          {!isStepValid(currentStep) && (
-            <div className="text-center text-sm text-muted-foreground">
-              Please fill in all required fields to continue
-            </div>
           )}
-        </form>
-
-        {/* Cost Info */}
-        <div className="mt-8 text-center text-sm text-muted-foreground">
-          <p>Deployment cost: ~$0.50 USD (varies with gas prices)</p>
         </div>
+
+        {/* Step Validation Info */}
+        {!isStepValid(currentStep) && (
+          <div className="text-center text-sm text-muted-foreground">
+            Please fill in all required fields to continue
+          </div>
+        )}
+      </form>
+
+      {/* Cost Info */}
+      <div className="mt-8 text-center text-sm text-muted-foreground">
+        <p>Deployment cost: ~$0.50 USD (varies with gas prices)</p>
       </div>
     </div>
   )

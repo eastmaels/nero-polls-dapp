@@ -10,5 +10,5 @@ export const calculateTimeLeft = (endTime: string | Date): string => {
     }
   
     const days = Math.ceil(timeLeftMs / (1000 * 60 * 60 * 24));
-    return `${days} days left`;
+    return days == 1 ? `${days} day left` : `${days} days left`;
   }

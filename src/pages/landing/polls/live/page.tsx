@@ -32,14 +32,10 @@ export default function LivePollsPage() {
   const [polls, setPolls] = useState<PollState[]>([]);
 
   useEffect(() => {
-    if (isConnected) {
-      fetchPolls();
-    }
-  }, [isConnected]); 
+    fetchPolls();
+  }, []); 
 
   const fetchPolls = async () => {
-    if (!isConnected || !AAaddress) return;
-
     try {
       setIsLoading(true);
       

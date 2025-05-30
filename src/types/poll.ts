@@ -16,6 +16,7 @@ export interface PollState {
   duration: string;
   endTime: Date;
   isOpen: boolean;
+  isFeatured?: boolean;
   totalResponses: number;
   funds: number;
   minContribution: string;
