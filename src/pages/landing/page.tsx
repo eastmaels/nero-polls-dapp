@@ -725,9 +725,6 @@ export default function LandingPage() {
         poll={selectedPoll} isOpen={isPollModalOpen} onClose={closePollModal}
         fetchPolls={fetchPolls}
       />
-      {/* Create Poll Modal */}
-      <NewPollModal isOpen={isCreatePollModalOpen} onClose={closeCreatePollModal} />
-
     </div>
   )
 }
