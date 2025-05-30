@@ -1,6 +1,10 @@
 "use client"
 
 import { useState } from "react"
+import { useSignature, useConfig, useSendUserOp } from '@/hooks';
+import { POLLS_DAPP_ABI,  } from '@/constants/abi';
+import { CONTRACT_ADDRESSES } from '@/constants/contracts';
+
 import { Tag } from "antd"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui_v3/dialog"
 import { Button } from "@/components/ui_v3/button"
@@ -14,6 +18,7 @@ import Image from "next/image"
 import { PollState } from "@/types/poll"
 import { ethers } from "ethers"
 import { calculateTimeLeft } from "@/utils/timeUtils"
+import { getCompressedAddress } from "@/utils/addressUtil"
 
 interface PollOption {
   id: string
@@ -23,62 +28,72 @@ interface PollOption {
   image?: string
 }
 
-// interface Poll {
-//   id: number
-//   title: string
-//   description: string
-//   participants: number
-//   timeLeft: string
-//   prize: string
-//   category: string
-//   status?: string
-//   creator: string
-//   totalVotes: number
-//   userHasVoted: boolean
-//   options: PollOption[]
-//   viewType: "text" | "gallery"
-// }
-
 interface PollModalProps {
   featureFlagNew: boolean
   poll: PollState | null | any
   isOpen: boolean
   onClose: () => void
+  fetchPolls: () => void
 }
 
-export function PollModal({ featureFlagNew, poll, isOpen, onClose }: PollModalProps) {
+export function PollModal({ featureFlagNew, poll, isOpen, onClose, fetchPolls }: PollModalProps) {
   console.log('featureFlagNew', featureFlagNew)
   console.log('modal poll', poll)
   const [selectedOption, setSelectedOption] = useState<string>("")
   const [hasVoted, setHasVoted] = useState(poll?.userHasVoted || false)
-  const [isVoting, setIsVoting] = useState(false)
+
+  const { isConnected, } = useSignature();
+  const { execute, waitForUserOpResult } = useSendUserOp();
+  const [userOpHash, setUserOpHash] = useState<string | null>(null);
+  const [txStatus, setTxStatus] = useState<string>('');
+  const [isPolling, setIsPolling] = useState(false);
+  const [isVoting, setIsVoting] = useState(false);
 
   if (!poll) return null
 
-  const handleVote = async () => {
-    if (!selectedOption || hasVoted) return
-
-    setIsVoting(true)
-
-    // Simulate voting API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    setHasVoted(true)
-    setIsVoting(false)
-
-    // Update poll data (in real app, this would come from API)
-    const optionIndex = poll.options.findIndex((opt) => opt === selectedOption)
-    if (optionIndex !== -1) {
-      poll.options[optionIndex].votes += 1
-      poll.totalVotes += 1
-      poll.participants += 1
-
-      // Recalculate percentages
-      poll.options.forEach((option) => {
-        option.percentage = (option.votes / poll.totalVotes) * 100
-      })
+  const handleOptionVote = async () => {
+    if (!isConnected) {
+      alert('Please connect your wallet first');
+      return;
     }
-  }
+
+    setIsVoting(true);
+    setUserOpHash(null);
+    setTxStatus('');
+
+    console.log('selectedOption', selectedOption)
+
+    try {
+      await execute({
+        function: 'submitResponse',
+        contractAddress: CONTRACT_ADDRESSES.dpollsContract,
+        abi: POLLS_DAPP_ABI, // Use the specific ABI with mint function
+        params: [
+          poll.id,
+          selectedOption,
+        ],
+        value: 0,
+      });
+
+      const result = await waitForUserOpResult();
+      setUserOpHash(result.userOpHash);
+      setIsPolling(true);
+
+      if (result.result === true) {
+        setIsPolling(false);
+        fetchPolls();
+      } else if (result.transactionHash) {
+        setTxStatus('Transaction hash: ' + result.transactionHash);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setTxStatus('An error occurred');
+    } finally {
+      setIsVoting(false);
+      onClose();
+    }
+
+  };
 
   const computePercentage = (responses: string[], option: string) => {
     if (responses?.length === 0) {
@@ -126,7 +141,7 @@ export function PollModal({ featureFlagNew, poll, isOpen, onClose }: PollModalPr
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} modal={true}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
         <DialogHeader>
           <div className="flex items-start justify-between">
@@ -148,11 +163,11 @@ export function PollModal({ featureFlagNew, poll, isOpen, onClose }: PollModalPr
               <Button variant="outline" size="sm" onClick={handleShare}>
                 <Share2 className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" asChild>
+              {/* <Button variant="outline" size="sm" asChild>
                 <a href={`/polls/${poll.id}`} target="_blank" rel="noreferrer">
                   <ExternalLink className="h-4 w-4" />
                 </a>
-              </Button>
+              </Button> */}
             </div>
           </div>
         </DialogHeader>
@@ -277,7 +292,7 @@ export function PollModal({ featureFlagNew, poll, isOpen, onClose }: PollModalPr
                   ))}
                 </RadioGroup>
 
-                <Button onClick={handleVote} disabled={!selectedOption || isVoting} className="w-full" size="lg">
+                <Button onClick={handleOptionVote} disabled={!selectedOption || isVoting} className="w-full text-white" size="lg">
                   {isVoting ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
@@ -304,23 +319,10 @@ export function PollModal({ featureFlagNew, poll, isOpen, onClose }: PollModalPr
 
           {/* Poll Details */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Poll Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-muted-foreground">Created by</p>
-                <p className="font-medium">{poll.creator}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Poll Type</p>
-                <p className="font-medium capitalize">{poll.viewType} Poll</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Entry Fee</p>
-                <p className="font-medium">0.01 ETH</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Voting Fee</p>
-                <p className="font-medium">0.005 ETH</p>
+                <p className="font-medium">{getCompressedAddress(poll.creator)}</p>
               </div>
             </div>
           </div>

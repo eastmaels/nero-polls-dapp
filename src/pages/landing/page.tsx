@@ -1,27 +1,27 @@
 "use client"
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect, useRef } from "react"
-import { Link } from 'react-router-dom'
-import { useSignature, useConfig } from '@/hooks';
+import { useConfig, useSignature } from '@/hooks';
+import { useEffect, useRef, useState } from "react";
+import { Link } from 'react-router-dom';
 
-import { POLLS_DAPP_ABI,  } from '@/constants/abi';
+import { POLLS_DAPP_ABI, } from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts';
-import { ethers } from 'ethers';
-import { convertTimestampToDate } from '@/utils/format';
 import { PollState } from '@/types/poll';
+import { convertTimestampToDate } from '@/utils/format';
+import { ethers } from 'ethers';
 
-import { Tag } from "antd";
-import { Button } from "@/components/ui_v3/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui_v3/card"
-import { Badge } from "@/components/ui_v3/badge"
-import { ArrowRight, Users, Trophy, Shield, Coins, Clock, Eye } from "lucide-react"
+import NewPollModal from "@/components/modals/new-poll-modal";
+import { PollModal } from "@/components/modals/poll-modal";
+import { Button } from "@/components/ui_v3/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui_v3/card";
 import LandingPageHeader from "@/pages/landing/landing-header";
-import { PollModal } from "@/components/poll-modal";
-import { getRandomValues } from "crypto";
-import { getRandomBoolean } from "@/utils/booleanUtils";
 import { calculateTimeLeft } from "@/utils";
+import { getRandomBoolean } from "@/utils/booleanUtils";
+import { Tag } from "antd";
+import { ArrowRight, Clock, Coins, Eye, Shield, Trophy, Users } from "lucide-react";
+import { VotePollModal } from "@/components/modals/vote-poll-modal";
 
 const TypewriterText = () => {
   const words = ["businesses", "surveys", "art contests", "debates"]
@@ -186,10 +186,18 @@ export default function LandingPage() {
   const [email, setEmail] = useState("")
   const [selectedPoll, setSelectedPoll] = useState<any | null>(null)
   const [isPollModalOpen, setIsPollModalOpen] = useState(false)
+  const [isCreatePollModalOpen, setIsCreatePollModalOpen] = useState(false)
   const [featureFlagNew, setFeatureFlagNew] = useState(true);
 
   if (featureFlagNew) {
-    featuredPolls = polls.filter(poll => poll.isFeatured)
+    const shuffle = (array: any[]) => {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    };
+    featuredPolls = shuffle(polls.filter(poll => poll.isFeatured)).slice(0, 8);
     console.log('featuredPollsNew', featuredPolls);
   }
 
@@ -209,15 +217,18 @@ export default function LandingPage() {
     setSelectedPoll(null)
   }
 
+  const handleCreatePoll = (poll: any) => {
+    setIsCreatePollModalOpen(true)
+  }
+  const closeCreatePollModal = () => {
+    setIsCreatePollModalOpen(false)
+  }
+
   useEffect(() => {
-    if (isConnected) {
-      fetchPolls();
-    }
-  }, [isConnected]); 
+    fetchPolls();
+  }, []); 
 
   const fetchPolls = async () => {
-    if (!isConnected || !AAaddress) return;
-
     try {
       setIsLoading(true);
       
@@ -352,8 +363,7 @@ export default function LandingPage() {
         <section className="py-20 bg-muted/50">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Featured Polls</h2>
-              <p className="text-muted-foreground text-lg">Join active polls and contests happening right now</p>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Respond to Polls</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
               {featuredPolls.map((poll: any) => (
@@ -482,7 +492,7 @@ export default function LandingPage() {
                       <Trophy className="h-4 w-4 text-primary-foreground text-white" />
                     </div>
                     <div>
-                      <h3 className="font-semibold mb-2">Make a contest, make money</h3>
+                      <h3 className="font-semibold mb-2">Make a polls, make money</h3>
                       <p className="text-muted-foreground">Turn your creative ideas into profitable contests</p>
                     </div>
                   </div>
@@ -710,9 +720,14 @@ export default function LandingPage() {
         </div>
       </footer>
       {/* Poll Modal */}
-      <PollModal
+      <VotePollModal
         featureFlagNew={featureFlagNew} 
-        poll={selectedPoll} isOpen={isPollModalOpen} onClose={closePollModal} />
+        poll={selectedPoll} isOpen={isPollModalOpen} onClose={closePollModal}
+        fetchPolls={fetchPolls}
+      />
+      {/* Create Poll Modal */}
+      <NewPollModal isOpen={isCreatePollModalOpen} onClose={closeCreatePollModal} />
+
     </div>
   )
 }
