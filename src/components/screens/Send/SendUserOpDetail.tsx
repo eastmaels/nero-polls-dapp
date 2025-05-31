@@ -11,6 +11,7 @@ import {
 } from '@/hooks'
 import { screens } from '@/types'
 import { truncateAddress, getSelectedTokenSymbol } from '@/utils'
+import { ethers } from 'ethers'
 
 const SendUserOpDetail: React.FC = () => {
   const { navigateTo } = useScreenManager()
@@ -103,6 +104,14 @@ const SendUserOpDetail: React.FC = () => {
                 {operation.function}
               </span>
             </p>
+            {operation?.value &&
+              <p className='text-sm text-text-secondary'>
+              Amount
+              <span className='text-md ml-2 text-text-primary break-words'>
+                {parseFloat(ethers.utils.formatEther(operation.value || '0'))} NERO
+              </span>
+              </p>
+            }
           </div>
         </div>
       ))}

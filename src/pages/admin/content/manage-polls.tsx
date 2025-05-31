@@ -61,8 +61,8 @@ function PollCard({ poll, type, fetchPolls, AAaddress, }:
   { poll: PollState, type: string, fetchPolls: () => void, AAaddress?: string, }) {
   
   const selectAfter = (
-    <Select defaultValue="NEON" style={{ width: "auto" }}>
-      <Select.Option value="NEON">NEON</Select.Option>
+    <Select defaultValue="NERO" style={{ width: "auto" }}>
+      <Select.Option value="NERO">NERO</Select.Option>
     </Select>
   );
 

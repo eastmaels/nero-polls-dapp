@@ -86,8 +86,8 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
   };
  
   const selectAfter = (
-    <Select defaultValue="NEON" style={{ width: "auto" }}>
-      <Option value="NEON">NEON</Option>
+    <Select defaultValue="NERO" style={{ width: "auto" }}>
+      <Option value="NERO">NERO</Option>
     </Select>
   );
 
@@ -247,7 +247,7 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
             style={{ textAlign: 'center' }}
           >
             <InputNumber
-              placeholder="Amount in NEONs that responders will receive"
+              placeholder="Amount in NERO that responders will receive"
               min="0.001"
               step="0.001"
               addonAfter={selectAfter}
@@ -279,7 +279,7 @@ export default function CreatePoll({ handleCreatePoll, handleTabChange }: Create
             style={{ textAlign: 'center' }}
           >
             <InputNumber 
-              placeholder="Minimum amount in NEON that funders (if crowdfunding) can contribute"
+              placeholder="Minimum amount in NERO that funders (if crowdfunding) can contribute"
               min="0.001"
               step="0.001"
               addonAfter={selectAfter}
