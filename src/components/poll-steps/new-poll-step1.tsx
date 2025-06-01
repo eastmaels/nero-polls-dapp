@@ -1,12 +1,12 @@
 "use client"
 
-import { DatePicker, Select } from "antd";
+import { DatePicker, Select, Switch, InputNumber } from "antd";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui_v3/card";
 import { Input } from "@/components/ui_v3/input";
 import { Label } from "@/components/ui_v3/label";
 import { Textarea } from "@/components/ui_v3/textarea";
 import { PollState } from "@/types/poll";
-import { Calendar } from "lucide-react";
+import { Calendar, Sparkles } from "lucide-react";
 import dayjs from 'dayjs';
 
 const { Option } = Select;
@@ -96,6 +96,32 @@ export default function PollStep1({ formData, updateFormData }: PollStepProps) {
               return current && current < dayjs().endOf('day');
             }}
           />
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              Use AI to generate options
+            </Label>
+            <Switch
+              checked={formData.useAI}
+              onChange={(checked) => updateFormData("useAI", checked)}
+            />
+          </div>
+          {formData.useAI && (
+            <div className="space-y-2">
+              <Label htmlFor="num-options">Number of options to generate</Label>
+              <InputNumber
+                id="num-options"
+                min={2}
+                max={10}
+                defaultValue={formData.numOptions}
+                onChange={(value) => updateFormData("numOptions", value)}
+                style={{ width: '100%' }}
+              />
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

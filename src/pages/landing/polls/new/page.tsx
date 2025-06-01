@@ -106,9 +106,11 @@ export default function CreatePollPage() {
     description: "",
     category: "",
     duration: "",
+    useAI: false,
   
     // Step 2: Options
     viewType: "text",
+    numOptions: 2,
     options: ["", ""],
   
     // Step 3: Settings
@@ -160,7 +162,7 @@ export default function CreatePollPage() {
           formData.duration
         )
       case 2:
-        return formData.options.every((option) => option.trim() !== "")
+        return formData.options?.every((option) => option.trim() !== "")
       case 3:
         return formData.fundingType && (formData.rewardDistribution === "split" || formData.rewardPerResponse)
       default:
