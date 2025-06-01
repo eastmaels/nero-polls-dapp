@@ -77,6 +77,45 @@ contract PollManager is IPollManager {
         return pollCounter++;
     }
 
+    function createUnfundedPoll(PollStructs.CreateUnfundedPollParams memory params) public returns (uint256) {
+        require(params.options.length >= 2, "Min 2 options");
+        require(params.durationDays > 0, "Invalid duration");
+
+        PollStructs.PollContent memory content = PollStructs.PollContent({
+            creator: msg.sender,
+            subject: params.subject,
+            description: params.description,
+            category: params.category,
+            status: params.isOpenImmediately ? "open" : "new",
+            viewType: params.viewType,
+            options: params.options,
+            isOpen: params.isOpenImmediately
+        });
+
+        PollStructs.PollSettings memory settings = PollStructs.PollSettings({
+            rewardPerResponse: 0,
+            maxResponses: type(uint256).max,
+            durationDays: params.durationDays,
+            minContribution: 0,
+            fundingType: "unfunded",
+            targetFund: 0,
+            endTime: block.timestamp + (params.durationDays * 1 days),
+            totalResponses: 0,
+            funds: 0,
+            rewardToken: address(0),
+            rewardDistribution: "none"
+        });
+
+        PollStructs.Poll storage p = polls[pollCounter];
+        p.content = content;
+        p.settings = settings;
+
+        pollIds.push(pollCounter);
+        userPolls[msg.sender].push(p);
+
+        return pollCounter++;
+    }
+
     function closePoll(uint256 pollId, address caller) public override {
         PollStructs.Poll storage p = polls[pollId];
         require(caller == p.content.creator, "Not creator");

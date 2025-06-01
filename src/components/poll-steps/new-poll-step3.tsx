@@ -64,10 +64,10 @@ export default function PollStep3({ formData, updateFormData }: PollStepProps) {
               <RadioGroupItem value="crowdfunded" id="crowdfunded" />
               <Label htmlFor="crowdfunded">Crowdfunded (Participants fund the rewards)</Label>
             </div>
-            <div className="flex items-center space-x-2">
+            {/* <div className="flex items-center space-x-2">
               <RadioGroupItem value="unfunded" id="unfunded" />
               <Label htmlFor="unfunded">Unfunded (No rewards for participants)</Label>
-            </div>
+            </div> */}
           </RadioGroup>
         </div>
 
@@ -170,10 +170,10 @@ export default function PollStep3({ formData, updateFormData }: PollStepProps) {
               <RadioGroupItem value="simple" id="simple" />
               <Label htmlFor="simple">One Vote Per Address (one-to-one)</Label>
             </div>
-            <div className="flex items-center space-x-2">
+            {/* <div className="flex items-center space-x-2">
               <RadioGroupItem value="weighted" id="weighted" />
               <Label htmlFor="weighted">One Vote Per Address (Weighted)</Label>
-            </div>
+            </div> */}
             {/* <div className="flex items-center space-x-2">
               <RadioGroupItem value="multiple-simple" id="multiple-simple" />
               <Label htmlFor="multiple-simple">Multiple Votes Per Address (one-to-one)</Label>
@@ -182,10 +182,10 @@ export default function PollStep3({ formData, updateFormData }: PollStepProps) {
               <RadioGroupItem value="multiple-weighted" id="multiple-weighted" />
               <Label htmlFor="multiple-weighted">Multiple Votes Per Address (weighted)</Label>
             </div> */}
-            <div className="flex items-center space-x-2">
+            {/* <div className="flex items-center space-x-2">
               <RadioGroupItem value="quadratic" id="quadratic" />
               <Label htmlFor="quadratic">Quadratic (Beta)</Label>
-            </div>
+            </div> */}
           </RadioGroup>
         </div>
       </CardContent>

@@ -112,6 +112,19 @@ export default function PollStep1({ formData, updateFormData }: PollStepProps) {
               onChange={(checked) => updateFormData("useAI", checked)}
             />
           </div>
+          {formData.useAI && (
+              <div className="space-y-2">
+                <Label htmlFor="num-options">Number of options to generate</Label>
+                <InputNumber
+                  id="num-options"
+                  min={2}
+                  max={10}
+                  defaultValue={formData.numOptions}
+                  onChange={(value) => updateFormData("numOptions", value)}
+                  style={{ width: '100%' }}
+                />
+              </div>
+            )}
         </div>
       </CardContent>
     </Card>
