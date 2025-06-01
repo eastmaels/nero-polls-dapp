@@ -27,6 +27,7 @@ export interface PollState {
   responses: string[];
   numOptions: number;
   useAI: boolean;
+  voteWeight: string;
   responsesWithAddress: {
     address: string;
     response: string;

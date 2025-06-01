@@ -70,7 +70,7 @@ export default function CreatePollPage() {
       console.log('pollData', pollData)
 
       console.log('pollForm.targetFund', pollForm.targetFund)
-      const value = ethers.utils.parseEther(pollForm.targetFund) || 0;
+      const value = ethers.utils.parseEther(pollForm.targetFund || "0");
       console.log('value', value)
 
       await execute({
