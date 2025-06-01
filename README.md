@@ -87,23 +87,15 @@ yarn dev
 ```bash
 vercel project
 vercel link --yes --project dpolls
-yarn build:demo
-vercel build --prod
-vercel --prebuilt --prod
+yarn build:demo && vercel build --prod && vercel --prebuilt --prod
 ```
-
-`yarn build:demo && vercel build --prod && vercel --prebuilt --prod`
-
-
 ### 3. Deployment (Beta)
 
 ```bash
 
 vercel project
 vercel link --yes --project dpolls-beta
-yarn build:demo
-vercel build --prod
-vercel --prebuilt --prod
+yarn build:demo && vercel build --prod && vercel --prebuilt --prod
 ```
 
 ## 📄 License

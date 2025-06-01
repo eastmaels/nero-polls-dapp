@@ -20,6 +20,16 @@ library PollStructs {
         string rewardDistribution;
     }
 
+    struct CreateUnfundedPollParams {
+        string subject;
+        string description;
+        string category;
+        string viewType;
+        string[] options;
+        uint256 durationDays;
+        bool isOpenImmediately;
+    }
+
     struct PollContent {
         address creator;
         string subject;

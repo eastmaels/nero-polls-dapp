@@ -54,10 +54,10 @@ export default function PollStep2({ formData, updateFormData }: PollStepProps) {
 
   useEffect(() => {
     console.log('poll step2-2 dpollsConfig.api', dpollsConfig.api)
-    if (formData.useAI && formData.numOptions === 0) {
+    if (formData.useAI && formData.options.length === 0) {
       generateOptions();
     }
-  }, [formData.useAI, formData.subject, formData.numOptions]);
+  }, [formData.useAI, formData.subject, formData.options]);
 
   const addOption = () => {
     updateFormData("options", [...formData.options, ""])

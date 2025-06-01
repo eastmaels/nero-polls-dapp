@@ -49,40 +49,59 @@ export default function CreatePollPage() {
     setTxStatus('');
 
     try {
-      const rewardPerResponse = pollForm.rewardDistribution === "split" ? "0" : pollForm.rewardPerResponse;
 
-      const pollInput = {
-        subject: pollForm.subject,
-        description: pollForm.description,
-        category: pollForm.category,
-        viewType: pollForm.viewType,
-        options: pollForm.options,
-        rewardPerResponse: ethers.utils.parseEther(rewardPerResponse).toString(),
-        durationDays: parseInt(pollForm.duration || "90"),
-        maxResponses: parseInt(pollForm.maxResponses || "1000"),
-        minContribution: ethers.utils.parseEther(pollForm.minContribution || "0.000001").toString(),
-        fundingType: pollForm.fundingType,
-        isOpenImmediately: pollForm.openImmediately,
-        targetFund: ethers.utils.parseEther(pollForm.targetFund || "0").toString(),
-        rewardToken: ethers.constants.AddressZero,
-        rewardDistribution: pollForm.rewardDistribution,
-        voteWeight: "simple", // Default to simple voting
-        baseContributionAmount: ethers.utils.parseEther("1").toString(), // Default to 1 ETH as base
-        maxWeight: "10" // Default max weight of 10
-      };
+      if (pollForm.fundingType === 'unfunded') {
+        const pollInput = {
+          subject: pollForm.subject,
+          description: pollForm.description,
+          category: pollForm.category,
+          viewType: pollForm.viewType,
+          options: pollForm.options,
+          durationDays: parseInt(pollForm.duration || "90"),
+          isOpenImmediately: pollForm.openImmediately
+        };
+        console.log('pollInput', pollInput);
 
-      console.log('pollInput', pollInput);
+        await execute({
+          function: 'createUnfundedPoll',
+          contractAddress: CONTRACT_ADDRESSES.dpollsContract,
+          abi: POLLS_DAPP_ABI,
+          params: [pollInput],
+          value: 0
+        });
 
-      const value = ethers.utils.parseEther(pollForm.targetFund || "0");
-      console.log('value', value);
+      } else {
+        const rewardPerResponse = pollForm.rewardDistribution === "split" ? "0" : pollForm.rewardPerResponse;
+        const value = ethers.utils.parseEther(pollForm.targetFund || "0");
+        const pollInput = {
+          subject: pollForm.subject,
+          description: pollForm.description,
+          category: pollForm.category,
+          viewType: pollForm.viewType,
+          options: pollForm.options,
+          rewardPerResponse: ethers.utils.parseEther(rewardPerResponse).toString(),
+          durationDays: parseInt(pollForm.duration || "90"),
+          maxResponses: parseInt(pollForm.maxResponses || "1000"),
+          minContribution: ethers.utils.parseEther(pollForm.minContribution || "0.000001").toString(),
+          fundingType: pollForm.fundingType,
+          isOpenImmediately: pollForm.openImmediately,
+          targetFund: ethers.utils.parseEther(pollForm.targetFund || "0").toString(),
+          rewardToken: ethers.constants.AddressZero,
+          rewardDistribution: pollForm.rewardDistribution,
+          voteWeight: "simple", // Default to simple voting
+          baseContributionAmount: ethers.utils.parseEther("1").toString(), // Default to 1 ETH as base
+          maxWeight: "10" // Default max weight of 10
+        };
+        console.log('pollInput', pollInput);
 
-      await execute({
-        function: pollForm.fundingType === 'unfunded' ? 'createUnfundedPoll' : 'createPoll',
-        contractAddress: CONTRACT_ADDRESSES.dpollsContract,
-        abi: POLLS_DAPP_ABI,
-        params: [pollInput],
-        value: value
-      });
+        await execute({
+          function: 'createPoll',
+          contractAddress: CONTRACT_ADDRESSES.dpollsContract,
+          abi: POLLS_DAPP_ABI,
+          params: [pollInput],
+          value: value
+        });
+      }
 
       const result = await waitForUserOpResult();
       setUserOpHash(result.userOpHash);
