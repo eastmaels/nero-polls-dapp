@@ -25,6 +25,9 @@ export interface PollState {
   rewardDistribution: string;
   targetFund: string;
   responses: string[];
+  numOptions: number;
+  useAI: boolean;
+  voteWeight: string;
   responsesWithAddress: {
     address: string;
     response: string;

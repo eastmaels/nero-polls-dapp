@@ -48,6 +48,7 @@ export default function LivePollsPage() {
         POLLS_DAPP_ABI,
         provider
       );
+      console.log('pollsContract', pollsContract)
       
       // Get all poll IDs
       const allPollIds = await pollsContract.getAllPollIds();

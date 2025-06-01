@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui_v3/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui_v3/card";
 import { Input } from "@/components/ui_v3/input";
@@ -7,6 +8,7 @@ import { Label } from "@/components/ui_v3/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui_v3/radio-group";
 import { PollState } from "@/types/poll";
 import { Plus, Trash2, Upload, Users } from "lucide-react";
+import dpollsConfig from '@/../dpolls.config'
 
 interface PollStepProps {
   formData: PollState;
@@ -14,6 +16,46 @@ interface PollStepProps {
 }
 
 export default function PollStep2({ formData, updateFormData }: PollStepProps) {
+  const [isGenerating, setIsGenerating] = useState(false);
+  console.log('poll step2-1')
+
+  useEffect(() => {
+    console.log('poll step2-2 dpollsConfig.api', dpollsConfig.api)
+    const generateOptions = async () => {
+      if (formData.useAI) {
+        setIsGenerating(true);
+        try {
+          const response = await fetch(`${dpollsConfig.api}/api/poll-options`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              question: formData.subject,
+              category: formData.category,
+              numOptions: formData.numOptions || 4
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to generate options');
+          }
+
+          const resp = await response.json();
+          updateFormData("options", resp.data.options || []);
+        } catch (error) {
+          console.error('Error generating options:', error);
+          // Fallback to empty options if generation fails
+          updateFormData("options", []);
+        } finally {
+          setIsGenerating(false);
+        }
+      }
+    };
+
+    generateOptions();
+  }, [formData.useAI, formData.subject, formData.numOptions]);
+
   const addOption = () => {
     updateFormData("options", [...formData.options, ""])
   }
@@ -57,32 +99,38 @@ export default function PollStep2({ formData, updateFormData }: PollStepProps) {
 
         <div className="space-y-4">
           <Label>Poll Options *</Label>
-          {formData.options.map((option, index) => (
-            <div key={index} className="flex gap-2">
-              <div className="flex-1">
-                <Input
-                  placeholder={`Option ${index + 1}`}
-                  value={option}
-                  onChange={(e) => updateOption(index, e.target.value)}
-                  required
-                />
-              </div>
-              {formData.viewType === "gallery" && (
-                <Button type="button" variant="outline" size="icon">
-                  <Upload className="h-4 w-4" />
-                </Button>
-              )}
-              {formData.options.length > 2 && (
-                <Button type="button" variant="outline" size="icon" onClick={() => removeOption(index)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          ))}
-          <Button type="button" variant="outline" onClick={addOption} className="w-full">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Option
-          </Button>
+          {isGenerating ? (
+            <div className="text-center py-4">Generating options...</div>
+          ) : (
+            <>
+              {formData.options.map((option, index) => (
+                <div key={index} className="flex gap-2">
+                  <div className="flex-1">
+                    <Input
+                      placeholder={`Option ${index + 1}`}
+                      value={option}
+                      onChange={(e) => updateOption(index, e.target.value)}
+                      required
+                    />
+                  </div>
+                  {formData.viewType === "gallery" && (
+                    <Button type="button" variant="outline" size="icon">
+                      <Upload className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {formData.options.length > 2 && (
+                    <Button type="button" variant="outline" size="icon" onClick={() => removeOption(index)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Button type="button" variant="outline" onClick={addOption} className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Option
+              </Button>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>

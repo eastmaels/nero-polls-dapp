@@ -7,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui_v3/radio-group";
 import { PollState } from "@/types/poll";
 import { ConfigProvider, Switch } from 'antd';
 import { Shield } from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface PollStepProps {
   formData: PollState;
@@ -14,6 +15,23 @@ interface PollStepProps {
 }
 
 export default function PollStep3({ formData, updateFormData }: PollStepProps) {
+  const [isVisible, setIsVisible] = useState(formData.fundingType !== "unfunded");
+  const [height, setHeight] = useState(formData.fundingType !== "unfunded" ? "auto" : "0");
+  const [transform, setTransform] = useState(formData.fundingType !== "unfunded" ? "translateY(0)" : "translateY(-10px)");
+
+  useEffect(() => {
+    if (formData.fundingType === "unfunded") {
+      setTransform("translateY(-10px)");
+      setIsVisible(false);
+      setTimeout(() => setHeight("0"), 400);
+    } else {
+      setHeight("auto");
+      setTimeout(() => {
+        setIsVisible(true);
+        setTransform("translateY(0)");
+      }, 50);
+    }
+  }, [formData.fundingType]);
 
   return (
     <Card>
@@ -30,7 +48,11 @@ export default function PollStep3({ formData, updateFormData }: PollStepProps) {
           <RadioGroup
             value={formData.fundingType}
             onValueChange={(value) => {
-              updateFormData("openImmediately", false)
+              if (value === "crowdfunded") {
+                updateFormData("openImmediately", false)
+              } else if (value === "unfunded") {
+                updateFormData("openImmediately", true)
+              }
               updateFormData("fundingType", value)
             }}
           >
@@ -41,6 +63,10 @@ export default function PollStep3({ formData, updateFormData }: PollStepProps) {
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="crowdfunded" id="crowdfunded" />
               <Label htmlFor="crowdfunded">Crowdfunded (Participants fund the rewards)</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="unfunded" id="unfunded" />
+              <Label htmlFor="unfunded">Unfunded (No rewards for participants)</Label>
             </div>
           </RadioGroup>
         </div>
@@ -65,53 +91,63 @@ export default function PollStep3({ formData, updateFormData }: PollStepProps) {
           <Label htmlFor="open-immediately">Open poll immediately after creation</Label>
         </div>
 
-        <div className="space-y-4">
-          <Label>How will responders be rewarded? *</Label>
-          <RadioGroup
-            value={formData.rewardDistribution}
-            onValueChange={(value) => updateFormData("rewardDistribution", value)}
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="split" id="split" />
-              <Label htmlFor="split">Split total funds equally among all responders</Label>
+        <div 
+          className="transition-all duration-500 ease-in-out overflow-hidden"
+          style={{ 
+            opacity: isVisible ? 1 : 0,
+            height: height,
+            transform: transform,
+            transition: 'opacity 500ms ease-in-out, transform 500ms ease-in-out, height 500ms ease-in-out',
+            pointerEvents: isVisible ? 'auto' : 'none'
+          }}
+        >
+          <div className="space-y-4">
+            <Label>How will responders be rewarded? *</Label>
+            <RadioGroup
+              value={formData.rewardDistribution}
+              onValueChange={(value) => updateFormData("rewardDistribution", value)}
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="split" id="split" />
+                <Label htmlFor="split">Split total funds equally among all responders</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="fixed" id="fixed" />
+                <Label htmlFor="fixed">Fixed amount per responder</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          {formData.rewardDistribution === "split" ? (
+            <div className="space-y-2">
+              <Label htmlFor="target-fund">Target Fund Amount (ETH) *</Label>
+              <Input
+                id="target-fund"
+                type="number"
+                step="0.001"
+                placeholder="1.0"
+                min="0"
+                value={formData.targetFund}
+                onChange={(e) => updateFormData("targetFund", e.target.value)}
+                required={formData.fundingType === "unfunded" ? false : true}
+              />
             </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="fixed" id="fixed" />
-              <Label htmlFor="fixed">Fixed amount per responder</Label>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="fixed-reward">Fixed Reward per Responder (ETH) *</Label>
+              <Input
+                id="fixed-reward"
+                type="number"
+                step="0.001"
+                placeholder="0.01"
+                min="0"
+                value={formData.rewardPerResponse}
+                onChange={(e) => updateFormData("rewardPerResponse", e.target.value)}
+                required={formData.fundingType === "unfunded" ? false : true}
+              />
             </div>
-          </RadioGroup>
+          )}
         </div>
-
-        {formData.rewardDistribution === "split" ? (
-          <div className="space-y-2">
-            <Label htmlFor="target-fund">Target Fund Amount (ETH) *</Label>
-            <Input
-              id="target-fund"
-              type="number"
-              step="0.001"
-              placeholder="1.0"
-              min="0"
-              value={formData.targetFund}
-              onChange={(e) => updateFormData("targetFund", e.target.value)}
-              required
-            />
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <Label htmlFor="fixed-reward">Fixed Reward per Responder (ETH) *</Label>
-            <Input
-              id="fixed-reward"
-              type="number"
-              step="0.001"
-              placeholder="0.01"
-              min="0"
-              value={formData.rewardPerResponse}
-              onChange={(e) => updateFormData("rewardPerResponse", e.target.value)}
-              required
-            />
-          </div>
-        )}
-
         <div className="space-y-2">
           <Label htmlFor="response-limit">Target Number of Responses</Label>
           <Input
@@ -123,6 +159,34 @@ export default function PollStep3({ formData, updateFormData }: PollStepProps) {
             onChange={(e) => updateFormData("maxResponses", e.target.value)}
           />
           <p className="text-sm text-muted-foreground">Leave empty for unlimited responses</p>
+        </div>
+        <div className="space-y-4">
+          <Label>Vote Weight? *</Label>
+          <RadioGroup
+            value={formData.voteWeight}
+            onValueChange={(value) => updateFormData("voteWeight", value)}
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="simple" id="simple" />
+              <Label htmlFor="simple">One Vote Per Address (one-to-one)</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="weighted" id="weighted" />
+              <Label htmlFor="weighted">One Vote Per Address (Weighted)</Label>
+            </div>
+            {/* <div className="flex items-center space-x-2">
+              <RadioGroupItem value="multiple-simple" id="multiple-simple" />
+              <Label htmlFor="multiple-simple">Multiple Votes Per Address (one-to-one)</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="multiple-weighted" id="multiple-weighted" />
+              <Label htmlFor="multiple-weighted">Multiple Votes Per Address (weighted)</Label>
+            </div> */}
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="quadratic" id="quadratic" />
+              <Label htmlFor="quadratic">Quadratic (Beta)</Label>
+            </div>
+          </RadioGroup>
         </div>
       </CardContent>
     </Card>
