@@ -49,35 +49,38 @@ export default function CreatePollPage() {
     setTxStatus('');
 
     try {
-      const rewardPerResponse = pollForm.rewardDistribution === "split" ?  "0" : pollForm.rewardPerResponse;
+      const rewardPerResponse = pollForm.rewardDistribution === "split" ? "0" : pollForm.rewardPerResponse;
 
-      const pollData = [
-        pollForm.subject,
-        pollForm.description,
-        pollForm.category,
-        pollForm.viewType,
-        pollForm.options,
-        ethers.utils.parseEther(rewardPerResponse).toString(),
-        parseInt(pollForm.duration || "90"),
-        parseInt(pollForm.maxResponses || "1000"),
-        ethers.utils.parseEther(pollForm.minContribution || "0.000001").toString(),
-        pollForm.fundingType,
-        pollForm.openImmediately,
-        ethers.utils.parseEther(pollForm.targetFund || "0").toString(),
-        ethers.constants.AddressZero,
-        pollForm.rewardDistribution
-      ];
-      console.log('pollData', pollData)
+      const pollInput = {
+        subject: pollForm.subject,
+        description: pollForm.description,
+        category: pollForm.category,
+        viewType: pollForm.viewType,
+        options: pollForm.options,
+        rewardPerResponse: ethers.utils.parseEther(rewardPerResponse).toString(),
+        durationDays: parseInt(pollForm.duration || "90"),
+        maxResponses: parseInt(pollForm.maxResponses || "1000"),
+        minContribution: ethers.utils.parseEther(pollForm.minContribution || "0.000001").toString(),
+        fundingType: pollForm.fundingType,
+        isOpenImmediately: pollForm.openImmediately,
+        targetFund: ethers.utils.parseEther(pollForm.targetFund || "0").toString(),
+        rewardToken: ethers.constants.AddressZero,
+        rewardDistribution: pollForm.rewardDistribution,
+        voteWeight: "simple", // Default to simple voting
+        baseContributionAmount: ethers.utils.parseEther("1").toString(), // Default to 1 ETH as base
+        maxWeight: "10" // Default max weight of 10
+      };
 
-      console.log('pollForm.targetFund', pollForm.targetFund)
+      console.log('pollInput', pollInput);
+
       const value = ethers.utils.parseEther(pollForm.targetFund || "0");
-      console.log('value', value)
+      console.log('value', value);
 
       await execute({
         function: 'createPoll',
         contractAddress: CONTRACT_ADDRESSES.dpollsContract,
         abi: POLLS_DAPP_ABI,
-        params: pollData,
+        params: [pollInput],
         value: value
       });
 
@@ -123,7 +126,7 @@ export default function CreatePollPage() {
   });
 
   const updateFormData = (field: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    setFormData((prev: typeof formData) => ({ ...prev, [field]: value }))
   }
 
   const nextStep = () => {
@@ -162,7 +165,7 @@ export default function CreatePollPage() {
           formData.duration
         )
       case 2:
-        return formData.options?.every((option) => option.trim() !== "")
+        return formData.options?.every((option: string) => option.trim() !== "")
       case 3:
         return formData.fundingType && (formData.rewardDistribution === "split" || formData.rewardPerResponse)
       default:
