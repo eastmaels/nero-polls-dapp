@@ -77,7 +77,7 @@ export default function CreatePollPage() {
       console.log('value', value);
 
       await execute({
-        function: 'createPoll',
+        function: pollForm.fundingType === 'unfunded' ? 'createUnfundedPoll' : 'createPoll',
         contractAddress: CONTRACT_ADDRESSES.dpollsContract,
         abi: POLLS_DAPP_ABI,
         params: [pollInput],
@@ -160,7 +160,6 @@ export default function CreatePollPage() {
       case 1:
         return (
           formData.subject &&
-          formData.description &&
           formData.category &&
           formData.duration
         )

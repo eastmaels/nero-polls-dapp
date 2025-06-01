@@ -61,7 +61,8 @@ export const POLLS_DAPP_ABI_V1 = [
 
 export const POLLS_DAPP_ABI = [
   // Poll Creation and Management
-  'function createPoll(string subject, string description, string category, string viewType, string[] options, uint256 rewardPerResponse, uint256 durationDays, uint256 maxResponses, uint256 minContribution, string fundingType, bool isOpenImmediately, uint256 targetFund, address rewardToken, string rewardDistribution) external payable',
+  'function createPoll(tuple(string subject, string description, string category, string viewType, string[] options, uint256 rewardPerResponse, uint256 durationDays, uint256 maxResponses, uint256 minContribution, string fundingType, bool isOpenImmediately, uint256 targetFund, address rewardToken, string rewardDistribution, string voteWeight, uint256 baseContributionAmount, uint256 maxWeight) input) external payable',
+  'function createUnfundedPoll(string subject, string description, string category, string viewType, string[] options, uint256 durationDays, uint256 maxResponses, bool isOpenImmediately) external',
   'function updatePoll(uint256 pollId, string subject, string description, uint256 rewardPerResponse, uint256 durationDays, uint256 maxResponses, uint256 minContribution, uint256 targetFund) external payable',
   'function submitResponse(uint256 pollId, string response) external payable',
   'function closePoll(uint256 pollId) external payable',
@@ -93,6 +94,10 @@ export const POLLS_DAPP_ABI = [
   'function getActivePolls() view returns (tuple(tuple(address creator, string subject, string description, string category, string status, string viewType, string[] options, bool isOpen) content, tuple(uint256 rewardPerResponse, uint256 maxResponses, uint256 durationDays, uint256 minContribution, string fundingType, uint256 targetFund, uint256 endTime, uint256 totalResponses, uint256 funds, address rewardToken, string rewardDistribution) settings, tuple(address responder, string response, uint256 weight, uint256 timestamp, bool isClaimed, uint256 reward)[] responses)[])',
   'function whitelistedTokens(address) view returns (bool)',
   'function nativeToken() view returns (address)',
+  'function getPollView(uint256 pollId) view returns (tuple(address creator, string subject, string description, string category, string status, string viewType, string[] options, uint256 rewardPerResponse, uint256 maxResponses, uint256 durationDays, uint256 minContribution, string fundingType, uint256 targetFund, uint256 endTime, bool isOpen, uint256 totalResponses, uint256 funds, address rewardToken, string rewardDistribution, bool isFeatured, string voteWeight, uint256 baseContributionAmount, uint256 maxWeight))',
+  'function getContribution(uint256 pollId, address contributor) view returns (uint256)',
+  'function setPollFeatured(uint256 pollId, bool isFeatured) external',
+  'function getFeaturedPolls() view returns (tuple(address creator, string subject, string description, string category, string status, string viewType, string[] options, uint256 rewardPerResponse, uint256 maxResponses, uint256 durationDays, uint256 minContribution, string fundingType, uint256 targetFund, uint256 endTime, bool isOpen, uint256 totalResponses, uint256 funds, address rewardToken, string rewardDistribution, bool isFeatured, string voteWeight, uint256 baseContributionAmount, uint256 maxWeight)[])',
   
   // Events
   'event PollCreated(uint256 pollId, address creator, string subject)',
@@ -101,7 +106,10 @@ export const POLLS_DAPP_ABI = [
   'event TargetFundUpdated(uint256 pollId, uint256 oldTarget, uint256 newTarget)',
   'event TokenWhitelisted(address token)',
   'event TokenRemoved(address token)',
-  'event NativeTokenSet(address token)'
+  'event NativeTokenSet(address token)',
+  'event PollFeatured(uint256 pollId, bool isFeatured)',
+  'event PollFunded(uint256 pollId, address funder, uint256 amount)',
+  'event ResponseSubmitted(uint256 pollId, address responder, string response, uint256 weight)'
 ]
 
 export const ERC721_ABI = [

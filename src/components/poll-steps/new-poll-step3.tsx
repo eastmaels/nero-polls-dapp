@@ -15,12 +15,12 @@ interface PollStepProps {
 }
 
 export default function PollStep3({ formData, updateFormData }: PollStepProps) {
-  const [isVisible, setIsVisible] = useState(formData.fundingType !== "no-fund");
-  const [height, setHeight] = useState(formData.fundingType !== "no-fund" ? "auto" : "0");
-  const [transform, setTransform] = useState(formData.fundingType !== "no-fund" ? "translateY(0)" : "translateY(-10px)");
+  const [isVisible, setIsVisible] = useState(formData.fundingType !== "unfunded");
+  const [height, setHeight] = useState(formData.fundingType !== "unfunded" ? "auto" : "0");
+  const [transform, setTransform] = useState(formData.fundingType !== "unfunded" ? "translateY(0)" : "translateY(-10px)");
 
   useEffect(() => {
-    if (formData.fundingType === "no-fund") {
+    if (formData.fundingType === "unfunded") {
       setTransform("translateY(-10px)");
       setIsVisible(false);
       setTimeout(() => setHeight("0"), 400);
@@ -50,7 +50,7 @@ export default function PollStep3({ formData, updateFormData }: PollStepProps) {
             onValueChange={(value) => {
               if (value === "crowdfunded") {
                 updateFormData("openImmediately", false)
-              } else if (value === "no-fund") {
+              } else if (value === "unfunded") {
                 updateFormData("openImmediately", true)
               }
               updateFormData("fundingType", value)
@@ -65,8 +65,8 @@ export default function PollStep3({ formData, updateFormData }: PollStepProps) {
               <Label htmlFor="crowdfunded">Crowdfunded (Participants fund the rewards)</Label>
             </div>
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="no-fund" id="no-fund" />
-              <Label htmlFor="no-fund">No-Fund (No rewards for participants)</Label>
+              <RadioGroupItem value="unfunded" id="unfunded" />
+              <Label htmlFor="unfunded">Unfunded (No rewards for participants)</Label>
             </div>
           </RadioGroup>
         </div>
@@ -129,7 +129,7 @@ export default function PollStep3({ formData, updateFormData }: PollStepProps) {
                 min="0"
                 value={formData.targetFund}
                 onChange={(e) => updateFormData("targetFund", e.target.value)}
-                required={formData.fundingType === "no-fund" ? false : true}
+                required={formData.fundingType === "unfunded" ? false : true}
               />
             </div>
           ) : (
@@ -143,7 +143,7 @@ export default function PollStep3({ formData, updateFormData }: PollStepProps) {
                 min="0"
                 value={formData.rewardPerResponse}
                 onChange={(e) => updateFormData("rewardPerResponse", e.target.value)}
-                required={formData.fundingType === "no-fund" ? false : true}
+                required={formData.fundingType === "unfunded" ? false : true}
               />
             </div>
           )}
@@ -167,21 +167,21 @@ export default function PollStep3({ formData, updateFormData }: PollStepProps) {
             onValueChange={(value) => updateFormData("voteWeight", value)}
           >
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="single-simple" id="single-simple" />
-              <Label htmlFor="single-simple">One Vote Per Address (one-to-one)</Label>
+              <RadioGroupItem value="simple" id="simple" />
+              <Label htmlFor="simple">One Vote Per Address (one-to-one)</Label>
             </div>
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="single-weighted" id="single-weighted" />
-              <Label htmlFor="single-weighted">One Vote Per Address (Weighted)</Label>
+              <RadioGroupItem value="weighted" id="weighted" />
+              <Label htmlFor="weighted">One Vote Per Address (Weighted)</Label>
             </div>
-            <div className="flex items-center space-x-2">
+            {/* <div className="flex items-center space-x-2">
               <RadioGroupItem value="multiple-simple" id="multiple-simple" />
               <Label htmlFor="multiple-simple">Multiple Votes Per Address (one-to-one)</Label>
             </div>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="multiple-weighted" id="multiple-weighted" />
               <Label htmlFor="multiple-weighted">Multiple Votes Per Address (weighted)</Label>
-            </div>
+            </div> */}
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="quadratic" id="quadratic" />
               <Label htmlFor="quadratic">Quadratic (Beta)</Label>

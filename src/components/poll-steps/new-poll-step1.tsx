@@ -40,14 +40,13 @@ export default function PollStep1({ formData, updateFormData }: PollStepProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="description">Description *</Label>
+          <Label htmlFor="description">Description</Label>
           <Textarea
             id="description"
             placeholder="Provide context and details about your poll"
             rows={4}
             value={formData.description}
             onChange={(e) => updateFormData("description", e.target.value)}
-            required
           />
         </div>
 
