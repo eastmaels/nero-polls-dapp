@@ -57,6 +57,7 @@ export default function PollStep1({ formData, updateFormData }: PollStepProps) {
               allowClear
               onChange={(value) => updateFormData("category", value)}
               style={{ width: "100%" }}
+              value={formData.category}
             >
               <Option value="art">Art</Option>
               <Option value="design">Design</Option>
@@ -82,12 +83,15 @@ export default function PollStep1({ formData, updateFormData }: PollStepProps) {
             required
           /> */}
           <DatePicker
-            onChange={(endDate) => {
+            onChange={(endDatePicker) => {
+              console.log("typeof endDate", typeof endDatePicker)
               const currentDate = new Date();
-              const durationInMs = endDate?.toDate().getTime() - currentDate.getTime();
+              const durationInMs = endDatePicker?.toDate().getTime() - currentDate.getTime();
               const durationInDays = Math.ceil(durationInMs / (1000 * 60 * 60 * 24));
               updateFormData("duration", durationInDays)
+              updateFormData("endDate", endDatePicker)
             }}
+            value={formData.endDate}
             picker="date"
             format="YYYY-MM-DD"
             style={{ width: '100%' }}
@@ -108,19 +112,6 @@ export default function PollStep1({ formData, updateFormData }: PollStepProps) {
               onChange={(checked) => updateFormData("useAI", checked)}
             />
           </div>
-          {formData.useAI && (
-            <div className="space-y-2">
-              <Label htmlFor="num-options">Number of options to generate</Label>
-              <InputNumber
-                id="num-options"
-                min={2}
-                max={10}
-                defaultValue={formData.numOptions}
-                onChange={(value) => updateFormData("numOptions", value)}
-                style={{ width: '100%' }}
-              />
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>

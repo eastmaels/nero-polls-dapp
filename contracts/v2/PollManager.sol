@@ -2,14 +2,19 @@
 pragma solidity ^0.8.26;
 
 import "./interfaces/IPollManager.sol";
+import "./libraries/PollStructs.sol";
 
 /// @title PollManager
 /// @notice Manages poll creation and basic poll operations
 contract PollManager is IPollManager {
+    using PollStructs for PollStructs.Poll;
+    using PollStructs for PollStructs.PollContent;
+    using PollStructs for PollStructs.PollSettings;
+
     uint256 public pollCounter;
     uint256[] public pollIds;
-    mapping(uint256 => Poll) public polls;
-    mapping(address => Poll[]) private userPolls;
+    mapping(uint256 => PollStructs.Poll) public polls;
+    mapping(address => PollStructs.Poll[]) private userPolls;
 
     function validateCreatePollParams(
         string[] memory options,
@@ -26,60 +31,54 @@ contract PollManager is IPollManager {
         require(targetFund >= rewardPerResponse * maxResponses, "Target >= rewards");
     }
 
-    function createPoll(
-        address creator,
-        string memory subject,
-        string memory description,
-        string memory category,
-        string memory viewType,
-        string[] memory options,
-        uint256 rewardPerResponse,
-        uint256 durationDays,
-        uint256 maxResponses,
-        uint256 minContribution,
-        string memory fundingType,
-        bool isOpenImmediately,
-        uint256 targetFund,
-        address rewardToken,
-        string memory rewardDistribution
-    ) public override returns (uint256) {
-        PollContent memory content = PollContent({
-            creator: creator,
-            subject: subject,
-            description: description,
-            category: category,
-            status: isOpenImmediately ? "open" : "new",
-            viewType: viewType,
-            options: options,
-            isOpen: isOpenImmediately
+    function createPoll(PollStructs.CreatePollParams memory params) public override returns (uint256) {
+        // Validate parameters
+        validateCreatePollParams(
+            params.options,
+            params.durationDays,
+            params.minContribution,
+            params.targetFund,
+            params.rewardPerResponse,
+            params.maxResponses
+        );
+
+        PollStructs.PollContent memory content = PollStructs.PollContent({
+            creator: msg.sender,
+            subject: params.subject,
+            description: params.description,
+            category: params.category,
+            status: params.isOpenImmediately ? "open" : "new",
+            viewType: params.viewType,
+            options: params.options,
+            isOpen: params.isOpenImmediately
         });
 
-        PollSettings memory settings = PollSettings({
-            rewardPerResponse: rewardPerResponse,
-            maxResponses: maxResponses,
-            durationDays: durationDays,
-            minContribution: minContribution,
-            fundingType: fundingType,
-            targetFund: targetFund,
-            endTime: block.timestamp + (durationDays * 1 days),
+        PollStructs.PollSettings memory settings = PollStructs.PollSettings({
+            rewardPerResponse: params.rewardPerResponse,
+            maxResponses: params.maxResponses,
+            durationDays: params.durationDays,
+            minContribution: params.minContribution,
+            fundingType: params.fundingType,
+            targetFund: params.targetFund,
+            endTime: block.timestamp + (params.durationDays * 1 days),
             totalResponses: 0,
             funds: 0,
-            rewardToken: rewardToken,
-            rewardDistribution: rewardDistribution
+            rewardToken: params.rewardToken,
+            rewardDistribution: params.rewardDistribution
         });
 
-        Poll storage p = polls[pollCounter];
+        PollStructs.Poll storage p = polls[pollCounter];
         p.content = content;
         p.settings = settings;
 
         pollIds.push(pollCounter);
-        userPolls[creator].push(p);
+        userPolls[params.creator].push(p);
 
         return pollCounter++;
     }
 
     function closePoll(uint256 pollId, address caller) public override {
-        Poll storage p = polls[pollId];
+        PollStructs.Poll storage p = polls[pollId];
         require(caller == p.content.creator, "Not creator");
         require(p.content.isOpen, "Already closed");
         require(block.timestamp >= p.settings.endTime || p.settings.totalResponses >= p.settings.maxResponses, "Too early");
@@ -89,7 +88,7 @@ contract PollManager is IPollManager {
     }
 
     function cancelPoll(uint256 pollId, address caller) public override {
-        Poll storage p = polls[pollId];
+        PollStructs.Poll storage p = polls[pollId];
         require(caller == p.content.creator, "Not creator");
         require(p.content.isOpen, "Already closed");
 
@@ -98,7 +97,7 @@ contract PollManager is IPollManager {
     }
 
     function openPoll(uint256 pollId, address caller) public override {
-        Poll storage p = polls[pollId];
+        PollStructs.Poll storage p = polls[pollId];
         require(caller == p.content.creator, "Not creator");
         require(!p.content.isOpen, "Already open");
         require(p.settings.funds >= p.settings.targetFund, "Target not reached");
@@ -109,13 +108,13 @@ contract PollManager is IPollManager {
     }
 
     function forClaiming(uint256 pollId, address caller) public override {
-        Poll storage p = polls[pollId];
+        PollStructs.Poll storage p = polls[pollId];
         require(caller == p.content.creator, "Not creator");
         p.content.status = "for-claiming";
     }
 
     function forFunding(uint256 pollId, address caller) public override {
-        Poll storage p = polls[pollId];
+        PollStructs.Poll storage p = polls[pollId];
         require(caller == p.content.creator, "Not creator");
         p.content.status = "for-funding";
     }
@@ -129,7 +128,7 @@ contract PollManager is IPollManager {
     }
 
     function getPollStatus(uint256 pollId) public view override returns (bool, uint256, uint256) {
-        Poll storage p = polls[pollId];
+        PollStructs.Poll storage p = polls[pollId];
         return (p.content.isOpen, p.settings.endTime, p.settings.totalResponses);
     }
 
@@ -137,9 +136,9 @@ contract PollManager is IPollManager {
         return pollIds;
     }
 
-    function getPoll(uint256 pollId) public view override returns (PollView memory) {
-        Poll storage p = polls[pollId];
-        return PollView({
+    function getPoll(uint256 pollId) public view override returns (PollStructs.PollView memory) {
+        PollStructs.Poll storage p = polls[pollId];
+        return PollStructs.PollView({
             creator: p.content.creator,
             subject: p.content.subject,
             description: p.content.description,
@@ -162,15 +161,15 @@ contract PollManager is IPollManager {
         });
     }
 
-    function getUserPolls(address user) public view override returns (Poll[] memory) {
+    function getUserPolls(address user) public view override returns (PollStructs.Poll[] memory) {
         return userPolls[user];
     }
 
-    function getUserActivePolls(address user) public view override returns (Poll[] memory) {
+    function getUserActivePolls(address user) public view override returns (PollStructs.Poll[] memory) {
         return userPolls[user];
     }
 
-    function getActivePolls() public view override returns (Poll[] memory) {
+    function getActivePolls() public view override returns (PollStructs.Poll[] memory) {
         uint256 activeCount = 0;
         
         for (uint256 i = 0; i < pollIds.length; i++) {
@@ -179,7 +178,7 @@ contract PollManager is IPollManager {
             }
         }
         
-        Poll[] memory activePolls = new Poll[](activeCount);
+        PollStructs.Poll[] memory activePolls = new PollStructs.Poll[](activeCount);
         uint256 currentIndex = 0;
         
         for (uint256 i = 0; i < pollIds.length; i++) {

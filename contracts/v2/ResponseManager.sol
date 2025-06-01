@@ -3,6 +3,7 @@ pragma solidity ^0.8.26;
 
 import "./interfaces/IResponseManager.sol";
 import "./interfaces/IPollManager.sol";
+import "./libraries/PollStructs.sol";
 
 /// @title ResponseManager
 /// @notice Manages poll responses
@@ -19,7 +20,7 @@ contract ResponseManager is IResponseManager {
         address responder,
         string memory response
     ) public override {
-        IPollManager.PollView memory poll = pollManager.getPoll(pollId);
+        PollStructs.PollView memory poll = pollManager.getPoll(pollId);
         require(poll.isOpen, "Closed");
         require(block.timestamp < poll.endTime, "Ended");
         require(poll.totalResponses < poll.maxResponses, "Max reached");

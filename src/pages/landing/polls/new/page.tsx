@@ -114,7 +114,7 @@ export default function CreatePollPage() {
     // Step 2: Options
     viewType: "text",
     numOptions: 2,
-    options: ["", ""],
+    options: [],
   
     // Step 3: Settings
     fundingType: "self-funded",

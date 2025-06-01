@@ -7,7 +7,7 @@ export const CONTRACT_ADDRESSES = {
   // This would be your deployed NFT contract address
   nftContract: "0x63f1f7c6a24294a874d7c8ea289e4624f84b48cb",
   dpollsContract_v1: "0xdA8942f6957f857bCe44FbbdFf21D1BD2346175B",
-  dpollsContract: "0xd9145CCE52D386f254917e481eB44e9943F39138",
+  dpollsContract: "0xc7BF8478eBb8F5560cb0a1B3c5C45A699f5B8648",
   testTokenContract: "0xA919e465871871F2D1da94BccAF3acaF9609D968" // TestToken contract address
 };
 
