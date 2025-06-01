@@ -12,8 +12,7 @@ import { PollState } from '@/types/poll';
 import { convertTimestampToDate } from '@/utils/format';
 import { ethers } from 'ethers';
 
-import NewPollModal from "@/components/modals/new-poll-modal";
-import { PollModal } from "@/components/modals/poll-modal";
+import { VotePollModal } from "@/components/modals/vote-poll-modal";
 import { Button } from "@/components/ui_v3/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui_v3/card";
 import LandingPageHeader from "@/pages/landing/landing-header";
@@ -21,7 +20,6 @@ import { calculateTimeLeft } from "@/utils";
 import { getRandomBoolean } from "@/utils/booleanUtils";
 import { Tag } from "antd";
 import { ArrowRight, Clock, Coins, Eye, Shield, Trophy, Users } from "lucide-react";
-import { VotePollModal } from "@/components/modals/vote-poll-modal";
 
 const TypewriterText = () => {
   const words = ["businesses", "surveys", "art contests", "debates"]
@@ -715,7 +713,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2024 dpolls. All rights reserved.</p>
+            <p>&copy; 2025 NERO dPolls. All rights reserved.</p>
           </div>
         </div>
       </footer>

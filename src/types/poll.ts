@@ -14,7 +14,7 @@ export interface PollState {
   rewardPerResponse: string;
   maxResponses: string;
   duration: string;
-  endTime: Date;
+  endDate: Date;
   isOpen: boolean;
   isFeatured?: boolean;
   totalResponses: number;

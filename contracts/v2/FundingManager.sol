@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IFundingManager.sol";
 import "./interfaces/IPollManager.sol";
 import "./interfaces/ITokenManager.sol";
+import "./libraries/PollStructs.sol";
 
 /// @title FundingManager
 /// @notice Manages poll funding and reward distribution
@@ -41,7 +42,7 @@ contract FundingManager is IFundingManager {
         uint256 newTargetFund,
         address caller
     ) public override returns (uint256) {
-        IPollManager.PollView memory poll = pollManager.getPoll(pollId);
+        PollStructs.PollView memory poll = pollManager.getPoll(pollId);
         require(caller == poll.creator, "Not creator");
         require(keccak256(bytes(poll.status)) == keccak256(bytes("new")), "Not funding");
         require(newTargetFund >= poll.minContribution, "Target < min");
@@ -54,7 +55,7 @@ contract FundingManager is IFundingManager {
     }
 
     function fundPoll(uint256 pollId, uint256 amount) public override {
-        IPollManager.PollView memory poll = pollManager.getPoll(pollId);
+        PollStructs.PollView memory poll = pollManager.getPoll(pollId);
         require(keccak256(bytes(poll.status)) == keccak256(bytes("for-funding")), "Not funding");
         require(amount >= poll.minContribution, "Below min");
         require(pollFunds[pollId] + amount <= poll.targetFund, "Exceeds target");
@@ -63,7 +64,7 @@ contract FundingManager is IFundingManager {
     }
 
     function fundPollWithToken(uint256 pollId, uint256 amount, address caller) public override {
-        IPollManager.PollView memory poll = pollManager.getPoll(pollId);
+        PollStructs.PollView memory poll = pollManager.getPoll(pollId);
         require(keccak256(bytes(poll.status)) == keccak256(bytes("for-funding")), "Not funding");
         require(amount >= poll.minContribution, "Below min");
         require(pollFunds[pollId] + amount <= poll.targetFund, "Exceeds target");
@@ -75,7 +76,7 @@ contract FundingManager is IFundingManager {
     }
 
     function claimReward(uint256 pollId, address caller) public override {
-        IPollManager.PollView memory poll = pollManager.getPoll(pollId);
+        PollStructs.PollView memory poll = pollManager.getPoll(pollId);
         require(keccak256(bytes(poll.status)) == keccak256(bytes("for-claiming")), "Not claiming");
         
         bool found = false;

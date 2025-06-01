@@ -6,6 +6,11 @@ import "./interfaces/IPollManager.sol";
 import "./interfaces/IFundingManager.sol";
 import "./interfaces/IResponseManager.sol";
 import "./interfaces/ITokenManager.sol";
+import "./libraries/PollStructs.sol";
+import "./TokenManager.sol";
+import "./PollManager.sol";
+import "./ResponseManager.sol";
+import "./FundingManager.sol";
 
 /// @title PollsDApp
 /// @notice A decentralized polling application
@@ -49,69 +54,73 @@ contract PollsDApp is Ownable {
         fundingManager = new FundingManager(address(pollManager), address(tokenManager));
     }
 
-    function createPoll(
-        string memory subject,
-        string memory description,
-        string memory category,
-        string memory viewType,
-        string[] memory options,
-        uint256 rewardPerResponse,
-        uint256 durationDays,
-        uint256 maxResponses,
-        uint256 minContribution,
-        string memory fundingType,
-        bool isOpenImmediately,
-        uint256 targetFund,
-        address rewardToken,
-        string memory rewardDistribution
-    ) external payable {
+    struct LocalCreatePollParams {
+        string subject;
+        string description;
+        string category;
+        string viewType;
+        string[] options;
+        uint256 rewardPerResponse;
+        uint256 durationDays;
+        uint256 maxResponses;
+        uint256 minContribution;
+        string fundingType;
+        bool isOpenImmediately;
+        uint256 targetFund;
+        address rewardToken;
+        string rewardDistribution;
+    }
+
+    function createPoll(LocalCreatePollParams memory params) external payable {
         // Validate parameters
         pollManager.validateCreatePollParams(
-            options,
-            durationDays,
-            minContribution,
-            targetFund,
-            rewardPerResponse,
-            maxResponses
+            params.options,
+            params.durationDays,
+            params.minContribution,
+            params.targetFund,
+            params.rewardPerResponse,
+            params.maxResponses
         );
 
         // Validate funding
         fundingManager.validateFunding(
-            rewardToken,
-            isOpenImmediately,
-            targetFund,
+            params.rewardToken,
+            params.isOpenImmediately,
+            params.targetFund,
             msg.value
         );
 
         // Create poll
         uint256 pollId = pollManager.createPoll(
-            msg.sender,
-            subject,
-            description,
-            category,
-            viewType,
-            options,
-            rewardPerResponse,
-            durationDays,
-            maxResponses,
-            minContribution,
-            fundingType,
-            isOpenImmediately,
-            targetFund,
-            rewardToken,
-            rewardDistribution
+            PollStructs.CreatePollParams({
+                creator: msg.sender,
+                subject: params.subject,
+                description: params.description,
+                category: params.category,
+                viewType: params.viewType,
+                options: params.options,
+                rewardPerResponse: params.rewardPerResponse,
+                durationDays: params.durationDays,
+                maxResponses: params.maxResponses,
+                minContribution: params.minContribution,
+                fundingType: params.fundingType,
+                isOpenImmediately: params.isOpenImmediately,
+                targetFund: params.targetFund,
+                rewardToken: params.rewardToken,
+                rewardDistribution: params.rewardDistribution
+            })
         );
 
         // Handle funding if immediate
-        if (isOpenImmediately && rewardToken == address(0)) {
+        if (params.isOpenImmediately && params.rewardToken == address(0)) {
             fundingManager.handleImmediateFunding(pollId, msg.value);
         }
 
-        emit PollCreated(pollId, msg.sender, subject);
+        emit PollCreated(pollId, msg.sender, params.subject);
     }
 
     function submitResponse(uint256 pollId, string memory response) external payable nonReentrant {
-        responseManager.submitResponse(pollId, msg.sender, response, msg.value);
+        responseManager.submitResponse(pollId, msg.sender, response);
     }
 
     function closePoll(uint256 pollId) external payable {
@@ -169,7 +178,7 @@ contract PollsDApp is Ownable {
         return pollManager.getAllPollIds();
     }
 
-    function getPoll(uint256 pollId) external view returns (IPollManager.PollView memory) {
+    function getPoll(uint256 pollId) external view returns (PollStructs.PollView memory) {
         return pollManager.getPoll(pollId);
     }
 
@@ -177,15 +186,15 @@ contract PollsDApp is Ownable {
         return responseManager.getPollResponses(pollId);
     }
 
-    function getUserPolls(address user) external view returns (IPollManager.Poll[] memory) {
+    function getUserPolls(address user) external view returns (PollStructs.Poll[] memory) {
         return pollManager.getUserPolls(user);
     }
 
-    function getUserActivePolls(address user) external view returns (IPollManager.Poll[] memory) {
+    function getUserActivePolls(address user) external view returns (PollStructs.Poll[] memory) {
         return pollManager.getUserActivePolls(user);
     }
 
-    function getActivePolls() external view returns (IPollManager.Poll[] memory) {
+    function getActivePolls() external view returns (PollStructs.Poll[] memory) {
         return pollManager.getActivePolls();
     }
 } 
