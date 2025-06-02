@@ -188,15 +188,7 @@ export default function LandingPage() {
   const [featureFlagNew, setFeatureFlagNew] = useState(true);
 
   if (featureFlagNew) {
-    const shuffle = (array: any[]) => {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-      return array;
-    };
-    featuredPolls = shuffle(polls.filter(poll => poll.isFeatured)).slice(0, 8);
-    console.log('featuredPollsNew', featuredPolls);
+    featuredPolls = polls.filter(poll => poll.isFeatured).slice(0, 8);
   }
 
   const handleEmailSubmit = (e: React.FormEvent) => {
@@ -248,7 +240,6 @@ export default function LandingPage() {
             try {
               // Get poll details using the polls function
               const pollDetails = await pollsContract.getPoll(pollId);
-              console.log('pollDetails', pollDetails)
               const pollResponses = await pollsContract.getPollResponses(pollId);
               const modPollResponses = pollResponses?.map((response: any) => {
                 return response.response
@@ -264,8 +255,6 @@ export default function LandingPage() {
                 }
               });
 
-              console.log('pollDetails', pollDetails)
-              
               // Format the poll data
               return {
                 id: pollId,
@@ -490,8 +479,8 @@ export default function LandingPage() {
                       <Trophy className="h-4 w-4 text-primary-foreground text-white" />
                     </div>
                     <div>
-                      <h3 className="font-semibold mb-2">Make a polls, make money</h3>
-                      <p className="text-muted-foreground">Turn your creative ideas into profitable contests</p>
+                      <h3 className="font-semibold mb-2">Make polls, get creative</h3>
+                      <p className="text-muted-foreground">Reward your community for their feedback</p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-4">
