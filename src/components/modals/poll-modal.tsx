@@ -70,7 +70,7 @@ export function PollModal({ featureFlagNew, poll, isOpen, onClose, fetchPolls }:
         abi: POLLS_DAPP_ABI, // Use the specific ABI with mint function
         params: [
           poll.id,
-          selectedOption,
+          selectedOption.toString(),
         ],
         value: 0,
       });

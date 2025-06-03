@@ -79,7 +79,7 @@ export function VotePollModal({ featureFlagNew, poll, isOpen, onClose, fetchPoll
         abi: POLLS_DAPP_ABI, // Use the specific ABI with mint function
         params: [
           poll.id,
-          selectedOption,
+          selectedOption.toString(),
         ],
         value: 0,
       });
@@ -104,12 +104,12 @@ export function VotePollModal({ featureFlagNew, poll, isOpen, onClose, fetchPoll
 
   };
 
-  const computePercentage = (responses: string[], option: string) => {
+  const computePercentage = (responses: string[], option: string, optionIndex: number) => {
     if (responses?.length === 0) {
       return 0;
     }
     const totalResponses = responses?.length;
-    const optionCount = responses?.filter(response => response === option).length;
+    const optionCount = responses?.filter(response => parseInt(response) === optionIndex).length;
     return Math.floor((optionCount / totalResponses) * 100);
   }
 
@@ -118,7 +118,7 @@ export function VotePollModal({ featureFlagNew, poll, isOpen, onClose, fetchPoll
       id: index,
       text: option,
       votes: poll.responses.length,
-      percentage: computePercentage(poll.responses, option)
+      percentage: computePercentage(poll.responses, option, index)
     };
   });
 
