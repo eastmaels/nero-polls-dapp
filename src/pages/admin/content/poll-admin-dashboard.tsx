@@ -36,8 +36,6 @@ export default function PollAdminDashboard() {
     return isSaved;
   })
 
-  console.log('tourActive', tourActive)
-
   const handleTourClose = () => {
     setTourActive(false)
     localStorage.setItem('poll-admin-tour-completed', 'true')

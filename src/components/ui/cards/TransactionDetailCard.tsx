@@ -18,11 +18,17 @@ const TransactionDetailCard: React.FC<TransactionDetailCardProps> = ({
       {children && <div className='border-b-[1px] pb-2 border-bg-secondary px-4'>{children}</div>}
       <div className='border-b-[1px] py-2 gap-2 px-4'>
         <BaseCardItem label='From(You)' value={from ? truncateAddress(from) : 'N/A'} />
-        {to && (
-          <BaseCardItem label='To' value={to ? truncateAddress(to) : 'N/A'} className='mt-3' />
-        )}
+        {to ?
+          (
+            <>
+                <BaseCardItem label='To' value={to ? truncateAddress(to) : 'N/A'} className='mt-3' />
+                {amount && <div className='border-b-[1px] py-2 px-4'>{amount}</div>}
+            </>
+          )
+          :
+          <></>
+        }
       </div>
-      {amount && <div className='border-b-[1px] py-2 px-4'>{amount}</div>}
       <div className='flex flex-col py-4 space-y-4 px-4'>
         <BaseCardItem
           label='Network'

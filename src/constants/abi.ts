@@ -27,7 +27,7 @@ export const POLLS_DAPP_ABI = [
   'function updateTargetFund(uint256 pollId, uint256 newTargetFund) external payable',
   'function fundPoll(uint256 pollId) external payable',
   'function fundPollWithToken(uint256 pollId, uint256 amount) external',
-  'function claimReward(uint256 pollId) external payable',
+  'function claimReward(uint256 pollId, address claimer) external payable',
   
   // Token Management
   'function whitelistToken(address token) external',

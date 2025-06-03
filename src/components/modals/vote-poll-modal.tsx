@@ -2,7 +2,6 @@
 
 import { SendUserOpContext } from '@/contexts';
 import { useSendUserOp, useSignature } from '@/hooks';
-import { ConnectButton as RainbowConnectButton } from '@rainbow-me/rainbowkit';
 
 import { POLLS_DAPP_ABI, } from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts';
@@ -21,6 +20,7 @@ import { Modal, Tag, Tooltip } from "antd";
 import { ethers } from "ethers";
 import { CheckCircle, Clock, Share2, Trophy, Users, Vote } from "lucide-react";
 import Image from "next/image";
+import { WalletConnector } from '@/components/wallet/wallet-connector';
 
 interface PollOption {
   id: string
@@ -301,7 +301,7 @@ export function VotePollModal({ featureFlagNew, poll, isOpen, onClose, fetchPoll
                 <RadioGroup
                   value={selectedOption}
                   onValueChange={setSelectedOption}
-                  disabled={isVoting || hasVoted || poll.status !== "open"}
+                  disabled={isVoting || hasVoted || poll.status !== "open" || !isConnected}
                 >
                   {modOptions.map((option: PollOption) => (
                     <div
@@ -352,54 +352,7 @@ export function VotePollModal({ featureFlagNew, poll, isOpen, onClose, fetchPoll
                       AAaddress={AAaddress}
                       isConnected={connected}
                     /> */}
-                    <RainbowConnectButton.Custom>
-                      {({ account, chain, openChainModal, openConnectModal, authenticationStatus, mounted }) => {
-                        const ready = mounted && authenticationStatus !== 'loading'
-                        const connected = Boolean(
-                          ready &&
-                            account &&
-                            chain &&
-                            (!authenticationStatus || authenticationStatus === 'authenticated'),
-                        )
-
-                        if (isWalletConnected !== connected) {
-                          setIsWalletConnected(connected)
-                        }
-
-                        if (!ready) return null
-                        if (chain?.unsupported) {
-                          return (
-                            <Button
-                              className="w-full text-white" size="lg"
-                              onClick={openConnectModal}
-                            >
-                              Connect Wallet
-                            </Button>
-                          )
-                        }
-
-                        if (connected) {
-                          return (
-                            <Button
-                              className="w-full text-white" size="lg"
-                              onClick={openConnectModal}
-                            >
-                              Connect Wallet
-                            </Button>
-                          );
-                        }
-                        if (!connected) {
-                          return (
-                            <Button
-                              className="w-full text-white" size="lg"
-                              onClick={openConnectModal}
-                            >
-                              Connect Wallet
-                            </Button>
-                          )
-                        }
-                      }}
-                    </RainbowConnectButton.Custom>
+                    <WalletConnector isWalletConnected={isWalletConnected} setIsWalletConnected={setIsWalletConnected} />
                   </>
                 }
 

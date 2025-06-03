@@ -27,8 +27,6 @@ export default function LeftSidebar({ activeTab, setActiveTab, isMobile }: LeftS
     return isSaved;
   })
 
-  console.log('tourActive', tourActive)
-
   const handleTourClose = () => {
     setTourActive(false)
     localStorage.setItem('poll-admin-tour-completed', 'true')

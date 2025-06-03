@@ -1,23 +1,27 @@
-import { useState, useContext, useEffect } from 'react';
-import { useSignature, useSendUserOp, useConfig, usePoll } from '@/hooks';
-import { POLLS_DAPP_ABI,  } from '@/constants/abi';
-import { CONTRACT_ADDRESSES } from '@/constants/contracts';
-import { ethers } from 'ethers';
-import { convertTimestampToDate } from '@/utils/format';
-import { PollState } from '@/types/poll';
-import { BarChart, PieChart, LineChart, Mail, Dice5, Trophy } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui_v3/card"
-import { Button } from "@/components/ui_v3/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui_v3/tabs"
-import { Progress } from "@/components/ui_v3/progress"
 
-import LeaderboardPage from '@/pages/leaderboard/page';
-import CreatePoll from "@/pages/simple/create-poll"
+import { SendUserOpContext } from '@/contexts';
+import { useContext, useEffect, useState } from "react";
+
 import ActivePolls from '@/pages/admin/content/active-polls';
-import ManagePolls from '@/pages/admin/content/manage-polls';
-import FundingPolls from '@/pages/admin/content/funding-polls';
 import ClaimingPolls from '@/pages/admin/content/claiming-polls';
+import FundingPolls from '@/pages/admin/content/funding-polls';
+import ManagePolls from '@/pages/admin/content/manage-polls';
+import LeaderboardPage from '@/pages/leaderboard/page';
+import CreatePoll from "@/pages/simple/create-poll";
 import CompletedPolls from './completed-polls';
+
+
+import { Button } from "@/components/ui_v3/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui_v3/card";
+import { Progress } from "@/components/ui_v3/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui_v3/tabs";
+import { POLLS_DAPP_ABI, } from '@/constants/abi';
+import { CONTRACT_ADDRESSES } from '@/constants/contracts';
+import { useConfig, useSignature } from '@/hooks';
+import { PollState } from '@/types/poll';
+import { convertTimestampToDate } from '@/utils/format';
+import { ethers } from 'ethers';
+import { BarChart, Dice5, LineChart, Mail, PieChart, Trophy } from "lucide-react";
 
 interface DashboardContentProps {
   activeTab: string
@@ -28,13 +32,19 @@ export default function DashboardContent({ activeTab, setActiveTab }: DashboardC
   const [activeDashboardTab, setActiveDashboardTab] = useState('active');
   const { AAaddress, isConnected, simpleAccountInstance } = useSignature();
 
-  const { execute, waitForUserOpResult, sendUserOp } = useSendUserOp();
   const config = useConfig(); // Get config to access RPC URL
   const [isLoading, setIsLoading] = useState(false);
-  const [userOpHash, setUserOpHash] = useState<string | null>(null);
   const [txStatus, setTxStatus] = useState<string>('');
-  const [isPolling, setIsPolling] = useState(false);
   const [polls, setPolls] = useState<any[]>([]);
+
+  const { isWalletPanel, setIsWalletPanel } = useContext(SendUserOpContext)!
+  const [isWalletConnected, setIsWalletConnected] = useState(false)
+
+  useEffect(() => {
+    if (!isWalletConnected) {
+      setIsWalletPanel(false)
+    }
+  }, [isWalletConnected, setIsWalletPanel])
 
   useEffect(() => {
     if (isConnected) {
@@ -80,7 +90,7 @@ export default function DashboardContent({ activeTab, setActiveTab }: DashboardC
                   reward: response.reward
                 }
               });
-
+              console.log("endtime", new Date(Number(pollDetails.endTime) * 1000));
               // Format the poll data
               return {
                 id: pollId,
@@ -93,6 +103,7 @@ export default function DashboardContent({ activeTab, setActiveTab }: DashboardC
                 rewardPerResponse: pollDetails.rewardPerResponse,
                 maxResponses: pollDetails.maxResponses.toString(),
                 endTime: new Date(Number(pollDetails.endTime) * 1000),
+                endDate: new Date(Number(pollDetails.endTime) * 1000),
                 isOpen: pollDetails.isOpen,
                 totalResponses: pollDetails.totalResponses.toString(),
                 funds: pollDetails.funds,
@@ -141,11 +152,32 @@ export default function DashboardContent({ activeTab, setActiveTab }: DashboardC
   } else if (activeTab === "created-polls") {
     return <ManagePolls AAaddress={AAaddress} handleTabChange={setActiveTab} polls={polls} fetchPolls={fetchPolls} activeDashboardTab={activeDashboardTab} />
   } else if (activeTab === "active-polls") {
-    return <ActivePolls AAaddress={AAaddress} handleTabChange={setActiveTab} polls={polls} fetchPolls={fetchPolls} />
+    return (
+      <ActivePolls
+        AAaddress={AAaddress}
+        handleTabChange={setActiveTab}
+        polls={polls}
+        fetchPolls={fetchPolls}
+        isWalletConnected={isWalletConnected}
+        setIsWalletConnected={setIsWalletConnected}
+      />
+    )
   } else if (activeTab === "funding-polls") {
-    return <FundingPolls polls={polls} handleTabChange={setActiveTab} fetchPolls={fetchPolls} />
+    return (
+      <FundingPolls
+        polls={polls} handleTabChange={setActiveTab} fetchPolls={fetchPolls} 
+        isWalletConnected={isWalletConnected}
+        setIsWalletConnected={setIsWalletConnected}
+      />
+    )
   } else if (activeTab === "claiming") {
-    return <ClaimingPolls AAaddress={AAaddress} handleTabChange={setActiveTab} polls={polls} fetchPolls={fetchPolls} />
+    return (
+      <ClaimingPolls
+        AAaddress={AAaddress} handleTabChange={setActiveTab} polls={polls} fetchPolls={fetchPolls}
+        isWalletConnected={isWalletConnected}
+        setIsWalletConnected={setIsWalletConnected}
+      />
+    );
   } else if (activeTab === "completed-polls") {
     return <CompletedPolls AAaddress={AAaddress} handleTabChange={setActiveTab} polls={polls} fetchPolls={fetchPolls} />
   } else if (activeTab === "settings") {

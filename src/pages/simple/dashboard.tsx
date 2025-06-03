@@ -445,6 +445,7 @@ function PollCard({ poll, type, fetchPolls, handleTabChange, AAaddress, handleFu
         abi: NERO_POLL_ABI,
         params: [
           poll.id,
+          AAaddress,
         ],
         value: 0,
       });

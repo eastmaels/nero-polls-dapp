@@ -74,7 +74,13 @@ export default function NewPollModal({ isOpen, onClose }: NewPollModalProps) {
       console.log('pollData', pollData)
 
       console.log('pollForm.targetFund', pollForm.targetFund)
-      const value = ethers.utils.parseEther(pollForm.targetFund) || 0;
+      let value = null;
+      if (pollForm.fundingType === "self-funded") {
+        value = ethers.utils.parseEther(pollForm.targetFund);
+      } else {
+        value = ethers.utils.parseEther("0");
+      }
+
       console.log('value', value)
 
       await execute({
@@ -122,6 +128,7 @@ export default function NewPollModal({ isOpen, onClose }: NewPollModalProps) {
     targetFund: "",
     rewardPerResponse: "",
     maxResponses: "",
+    voteWeight: "simple",
   });
 
   const updateFormData = (field: string, value: any) => {

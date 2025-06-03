@@ -70,7 +70,12 @@ export default function CreatePoll() {
 
       } else {
         const rewardPerResponse = pollForm.rewardDistribution === "split" ? "0" : pollForm.rewardPerResponse;
-        const value = ethers.utils.parseEther(pollForm.targetFund || "0");
+        let value = null;
+        if (pollForm.fundingType === "self-funded") {
+          value = ethers.utils.parseEther(pollForm.targetFund);
+        } else {
+          value = ethers.utils.parseEther("0");
+        }
         const pollInput = {
           creator: AAaddress,
           subject: pollForm.subject,
@@ -140,6 +145,7 @@ export default function CreatePoll() {
     targetFund: "",
     rewardPerResponse: "",
     maxResponses: "",
+    voteWeight: "simple",
   });
 
   const updateFormData = (field: string, value: any) => {
