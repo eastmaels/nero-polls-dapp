@@ -149,6 +149,9 @@ contract PollManager is IPollManager {
     function forClaiming(uint256 pollId, address caller) public override {
         PollStructs.Poll storage p = polls[pollId];
         require(caller == p.content.creator, "Not creator");
+        require(p.content.isOpen, "Already closed");
+        require(block.timestamp >= p.settings.endTime || p.settings.totalResponses >= p.settings.maxResponses, "Too early");
+
         p.content.status = "for-claiming";
     }
 

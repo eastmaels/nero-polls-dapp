@@ -25,12 +25,21 @@ contract FundingManager is IFundingManager {
         address rewardToken,
         bool isOpenImmediately,
         uint256 targetFund,
-        uint256 value
+        uint256 value,
+        string memory fundingType
     ) public pure override {
         if (isOpenImmediately) {
             require(rewardToken == address(0), "Immediate open only supports native token");
             require(value == targetFund, "Insufficient funds");
         }
+        
+        // Validate funding type
+        require(
+            keccak256(bytes(fundingType)) == keccak256(bytes("crowdfunded"))
+            || keccak256(bytes(fundingType)) == keccak256(bytes("unfunded"))
+            || keccak256(bytes(fundingType)) == keccak256(bytes("self-funded")),
+            "Invalid funding type"
+        );
     }
 
     function handleImmediateFunding(uint256 pollId, uint256 amount) public override {

@@ -88,7 +88,8 @@ contract PollsDApp is Ownable {
             params.rewardToken,
             params.isOpenImmediately,
             params.targetFund,
-            msg.value
+            msg.value,
+            params.fundingType
         );
 
         // Create poll
@@ -162,8 +163,8 @@ contract PollsDApp is Ownable {
         fundingManager.fundPollWithToken(pollId, amount, msg.sender);
     }
 
-    function claimReward(uint256 pollId) external payable nonReentrant {
-        fundingManager.claimReward(pollId, msg.sender);
+    function claimReward(uint256 pollId, address claimer) external payable nonReentrant {
+        fundingManager.claimReward(pollId, claimer);
     }
 
     // View functions
@@ -180,7 +181,9 @@ contract PollsDApp is Ownable {
     }
 
     function getPoll(uint256 pollId) external view returns (PollStructs.PollView memory) {
-        return pollManager.getPoll(pollId);
+        PollStructs.PollView memory poll = pollManager.getPoll(pollId);
+        poll.funds = fundingManager.pollFunds(pollId);
+        return poll;
     }
 
     function getPollResponses(uint256 pollId) external view returns (IResponseManager.PollResponse[] memory) {
