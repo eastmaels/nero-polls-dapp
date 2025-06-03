@@ -49,7 +49,6 @@ export default function LivePollsPage() {
         POLLS_DAPP_ABI,
         provider
       );
-      console.log('pollsContract', pollsContract)
 
       // Get all poll IDs
       const allPollIds = await pollsContract.getAllPollIds();
@@ -263,61 +262,6 @@ export default function LivePollsPage() {
     const [selectedPoll, setSelectedPoll] = useState<any | null>(null)
     const [isPollModalOpen, setIsPollModalOpen] = useState(false)
 
-    const handleOptionVote = async (option) => {
-      if (!isConnected) {
-        alert('Please connect your wallet first');
-        return;
-      }
-
-      setIsVoting(true);
-      setUserOpHash(null);
-      setTxStatus('');
-
-      try {
-        await execute({
-          function: 'submitResponse',
-          contractAddress: CONTRACT_ADDRESSES.dpollsContract,
-          abi: POLLS_DAPP_ABI, // Use the specific ABI with mint function
-          params: [
-            poll.id,
-            option.text,
-          ],
-          value: 0,
-        });
-
-        const result = await waitForUserOpResult();
-        setUserOpHash(result.userOpHash);
-        setIsPolling(true);
-
-        if (result.result === true) {
-          setIsPolling(false);
-          fetchPolls();
-        } else if (result.transactionHash) {
-          setTxStatus('Transaction hash: ' + result.transactionHash);
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        setTxStatus('An error occurred');
-      } finally {
-        setIsVoting(false);
-        setIsVoteModalOpen(false);
-      }
-
-    };
-
-    const computePercentage = (responses: string[], option: string) => {
-      if (responses?.length === 0) {
-        return 0;
-      }
-      const totalResponses = responses?.length;
-      const optionCount = responses?.filter(response => response === option).length;
-      return Math.floor((optionCount / totalResponses) * 100);
-    }
-
-    const modOptions = poll.options.map((option) => {
-      return { text: option, percentage: computePercentage(poll.responses, option) };
-    });
-
     const handleViewPoll = (poll: any) => {
       setSelectedPoll(poll)
       setIsPollModalOpen(true)
@@ -386,25 +330,6 @@ export default function LivePollsPage() {
             {renderButtonText(poll)}
           </Button>
         </CardContent>
-        <Modal
-          title={poll.subject || poll.title || poll.question}
-          open={isVoteModalOpen}
-          onCancel={() => setIsVoteModalOpen(false)}
-          footer={null}
-          maskClosable={false}
-        >
-          <Space direction="vertical" size="middle">
-            {modOptions.map((option, index) => (
-              <Button
-                key={index} block onClick={() => handleOptionVote(option)}
-                loading={isVoting}
-                disabled={isVoted}
-              >
-                {option.text}
-              </Button>
-            ))}
-          </Space>
-        </Modal>
         <VotePollModal
           featureFlagNew={true} 
           poll={selectedPoll} isOpen={isPollModalOpen} onClose={closePollModal}
