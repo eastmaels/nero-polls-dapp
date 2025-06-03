@@ -1,19 +1,29 @@
 "use client"
 
+import { VotePollModal } from "@/components/modals/vote-poll-modal";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui_v2/avatar";
 import { Badge } from "@/components/ui_v2/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui_v2/card";
-import { POLLS_DAPP_ABI, } from '@/constants/abi';
-import { CONTRACT_ADDRESSES } from '@/constants/contracts';
-import { useSendUserOp, useSignature } from '@/hooks';
+import { WalletConnector } from "@/components/wallet/wallet-connector";
+import { useSignature } from '@/hooks';
 import { PollState } from "@/types/poll";
-import { Button, Modal, Space } from 'antd';
+import { Button, Result } from 'antd';
 import { ethers } from 'ethers';
 import { CircleDollarSign, Clock, Users } from "lucide-react";
 import { useState } from "react";
 
-export default function ActivePolls({ polls, fetchPolls, AAaddress, handleTabChange }:
-  { AAaddress: string, polls: PollState[], fetchPolls: () => void, handleTabChange: (tab: string) => void, }) {
+interface ActivePollsProps {
+  AAaddress: string
+  polls: PollState[]
+  isWalletConnected: boolean
+  setIsWalletConnected: (isWalletConnected: boolean) => void
+  fetchPolls: () => void
+  handleTabChange: (tab: string) => void,
+}
+
+export default function ActivePolls({ polls, fetchPolls, AAaddress, handleTabChange, isWalletConnected, setIsWalletConnected }: ActivePollsProps) {
+
+  const { isConnected } = useSignature();
   // Filter polls based on their status
   const targetPolls = polls.filter(poll => poll.isOpen && (poll.status === "open"))
 
@@ -31,10 +41,20 @@ export default function ActivePolls({ polls, fetchPolls, AAaddress, handleTabCha
         ))}
         {targetPolls.length === 0 && (
           <div className="col-span-3 text-center py-10">
-            <p className="text-gray-500">No active polls</p>
-            <Button className="mt-4" onClick={() => handleTabChange('create-poll')}>
-              Create Your First Poll
-            </Button>
+            {isConnected ?
+              <>
+                <Result
+                  status="404"
+                  title="Oops!"
+                  subTitle="No polls are accepting responses"
+                />
+                <Button className="mt-4" onClick={() => handleTabChange('create-poll')}>
+                  Create Your First Poll
+                </Button>
+              </>
+              :
+              <WalletConnector isWalletConnected={isWalletConnected} setIsWalletConnected={setIsWalletConnected} />
+             }
           </div>
         )}
       </div>
@@ -61,57 +81,20 @@ function calculateTimeLeft(endTime: string | Date): string {
 function PollCard({ poll, type, fetchPolls, AAaddress }:
   { poll: any, type: string, fetchPolls: () => void, AAaddress: string, }) {
 
-  const { isConnected, } = useSignature();
-  const { execute, waitForUserOpResult } = useSendUserOp();
-  const [userOpHash, setUserOpHash] = useState<string | null>(null);
-  const [txStatus, setTxStatus] = useState<string>('');
-  const [isPolling, setIsPolling] = useState(false);
-  const [isVoting, setIsVoting] = useState(false);
-
-  const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
   const isVoted = poll.responsesWithAddress?.some(response => response.address === AAaddress);
 
-  const handleOptionVote = async (option) => {
-    if (!isConnected) {
-      alert('Please connect your wallet first');
-      return;
-    }
+  const [selectedPoll, setSelectedPoll] = useState<any | null>(null)
+  const [isPollModalOpen, setIsPollModalOpen] = useState(false)
 
-    setIsVoting(true);
-    setUserOpHash(null);
-    setTxStatus('');
+  const handleViewPoll = (poll: any) => {
+    setSelectedPoll(poll)
+    setIsPollModalOpen(true)
+  }
 
-    try {
-      await execute({
-        function: 'submitResponse',
-        contractAddress: CONTRACT_ADDRESSES.dpollsContract,
-        abi: POLLS_DAPP_ABI, // Use the specific ABI with mint function
-        params: [
-          poll.id,
-          option.text,
-        ],
-        value: 0,
-      });
-
-      const result = await waitForUserOpResult();
-      setUserOpHash(result.userOpHash);
-      setIsPolling(true);
-
-      if (result.result === true) {
-        setIsPolling(false);
-        fetchPolls();
-      } else if (result.transactionHash) {
-        setTxStatus('Transaction hash: ' + result.transactionHash);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      setTxStatus('An error occurred');
-    } finally {
-      setIsVoting(false);
-      setIsVoteModalOpen(false);
-    }
-
-  };
+  const closePollModal = () => {
+    setIsPollModalOpen(false)
+    setSelectedPoll(null)
+  }
 
   const computePercentage = (responses: string[], option: string) => {
     if (responses?.length === 0) {
@@ -186,34 +169,21 @@ function PollCard({ poll, type, fetchPolls, AAaddress }:
           {poll.status === "open" && type === "active" &&
             <Button
               block
-              onClick={() => setIsVoteModalOpen(true)}
               type="primary"
               disabled={isVoted}
+              onClick={() => handleViewPoll(poll)}
             >
               Vote
             </Button>
           }
         </div>
       </CardFooter>
-      <Modal
-        title={poll.subject || poll.title || poll.question}
-        open={isVoteModalOpen}
-        onCancel={() => setIsVoteModalOpen(false)}
-        footer={null}
-        maskClosable={false}
-      >
-        <Space direction="vertical" size="middle">
-          {modOptions.map((option, index) => (
-            <Button
-              key={index} block onClick={() => handleOptionVote(option)}
-              loading={isVoting}
-              disabled={isVoted}
-            >
-              {option.text}
-            </Button>
-          ))}
-        </Space>
-      </Modal>
+      {/* Poll Modal */}
+      <VotePollModal
+        featureFlagNew={true} 
+        poll={selectedPoll} isOpen={isPollModalOpen} onClose={closePollModal}
+        fetchPolls={fetchPolls}
+      />
     </Card>
   )
 }

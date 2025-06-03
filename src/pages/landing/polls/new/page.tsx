@@ -52,6 +52,7 @@ export default function CreatePollPage() {
 
       if (pollForm.fundingType === 'unfunded') {
         const pollInput = {
+          creator: AAaddress,
           subject: pollForm.subject,
           description: pollForm.description,
           category: pollForm.category,
@@ -60,7 +61,6 @@ export default function CreatePollPage() {
           durationDays: parseInt(pollForm.duration || "90"),
           isOpenImmediately: pollForm.openImmediately
         };
-        console.log('pollInput', pollInput);
 
         await execute({
           function: 'createUnfundedPoll',
@@ -72,8 +72,14 @@ export default function CreatePollPage() {
 
       } else {
         const rewardPerResponse = pollForm.rewardDistribution === "split" ? "0" : pollForm.rewardPerResponse;
-        const value = ethers.utils.parseEther(pollForm.targetFund || "0");
+        let value = null;
+        if (pollForm.fundingType === "self-funded") {
+          value = ethers.utils.parseEther(pollForm.targetFund);
+        } else {
+          value = ethers.utils.parseEther("0");
+        }
         const pollInput = {
+          creator: AAaddress,
           subject: pollForm.subject,
           description: pollForm.description,
           category: pollForm.category,
@@ -92,7 +98,6 @@ export default function CreatePollPage() {
           baseContributionAmount: ethers.utils.parseEther("1").toString(), // Default to 1 ETH as base
           maxWeight: "10" // Default max weight of 10
         };
-        console.log('pollInput', pollInput);
 
         await execute({
           function: 'createPoll',
@@ -142,6 +147,7 @@ export default function CreatePollPage() {
     targetFund: "",
     rewardPerResponse: "",
     maxResponses: "",
+    voteWeight: "simple",
   });
 
   const updateFormData = (field: string, value: any) => {

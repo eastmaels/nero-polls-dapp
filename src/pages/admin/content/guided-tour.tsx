@@ -168,7 +168,6 @@ export default function GuidedTour({ isActive, onClose, activeTab, setActiveTab 
   const nextStep = () => {
     if (currentStep < tourSteps.length - 1) {
       const nextStepData = tourSteps[currentStep + 1]
-      console.log('nextStepData.target', nextStepData.target)
 
       // Auto-navigate to required tabs
       if (nextStepData.target === "create-poll-nav" || nextStepData.target === "poll-form") {
@@ -202,7 +201,6 @@ export default function GuidedTour({ isActive, onClose, activeTab, setActiveTab 
   const prevStep = () => {
     if (currentStep > 0) {
       const prevStepData = tourSteps[currentStep - 1]
-      console.log('prevStepData.target', prevStepData.target)
 
       // Auto-navigate to required tabs
       if (prevStepData.target === "create-poll-nav" || prevStepData.target === "poll-form") {

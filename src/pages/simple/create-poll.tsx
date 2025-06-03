@@ -1,323 +1,315 @@
 "use client"
 
-import { useState } from "react"
-import { useNavigate } from 'react-router-dom'
-import { Trash2, PlusCircle, } from "lucide-react"
-import { ConfigProvider, DatePicker, DatePickerProps, InputNumber, Select } from "antd";
-import { Button, Form, Input, Card, Space } from 'antd';
-import { Steps } from 'antd';
-import dayjs from 'dayjs';
+import { useState } from "react";
+import { useNavigate } from 'react-router-dom';
 
-const { Option } = Select;
+import { POLLS_DAPP_ABI, } from '@/constants/abi';
+import { CONTRACT_ADDRESSES } from '@/constants/contracts';
+import { useSendUserOp, useSignature } from '@/hooks';
+import { ethers } from 'ethers';
 
-interface CreatePollProps {
-  handleCreatePoll: (pollData: any) => Promise<void>;
-  handleTabChange?: (tab: string) => void;
-}
+import { Button } from "@/components/ui_v3/button";
+import { Progress } from "@/components/ui_v3/progress";
+import { ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
 
-interface PollOption {
-  id: number;
-  text: string;
-}
+import PollStep1 from "@/components/poll-steps/new-poll-step1";
+import PollStep2 from "@/components/poll-steps/new-poll-step2";
+import PollStep3 from "@/components/poll-steps/new-poll-step3";
+import { PollState } from '@/types/poll';
 
-const onChange: DatePickerProps['onChange'] = (date, dateString) => {
-  console.log(date, dateString);
-};
+const STEPS = [
+  { id: 1, title: "Content", description: "Question, description & duration" },
+  { id: 2, title: "Options", description: "Poll choices & display type" },
+  { id: 3, title: "Settings", description: "Funding, rewards & limits" },
+]
 
-export default function CreatePoll({ handleCreatePoll, handleTabChange }: CreatePollProps) {
-  const [form] = Form.useForm();
+export default function CreatePoll() {
+  const { AAaddress, isConnected, simpleAccountInstance } = useSignature();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [options, setOptions] = useState<PollOption[]>([
-    { id: 1, text: "" },
-    { id: 2, text: "" },
-  ]);
 
-  const [current, setCurrent] = useState(0);
-  const steps = [
-    { title: 'Basic Info' },
-    { title: 'Options' },
-    { title: 'Settings' }
-  ];
+  const { execute, waitForUserOpResult, sendUserOp } = useSendUserOp();
+  const [isLoading, setIsLoading] = useState(false);
+  const [userOpHash, setUserOpHash] = useState<string | null>(null);
+  const [txStatus, setTxStatus] = useState<string>('');
+  const [isPolling, setIsPolling] = useState(false);
 
-  const next = async () => {
-    setCurrent(current + 1);
-  };
+  const [currentStep, setCurrentStep] = useState(1)
+  const [isTransitioning, setIsTransitioning] = useState(false)
 
-  const prev = async () => {
-    setCurrent(current - 1);
-  };
+  const handleCreatePoll = async (pollForm: PollState) => {
+    if (!isConnected) {
+      alert('Please connect your wallet first');
+      return;
+    }
 
-  const handleSubmit = async () => {
-    setLoading(true);
+    setIsLoading(true);
+    setUserOpHash(null);
+    setTxStatus('');
+
     try {
-      await form.validateFields();
-      const fieldsValue = form.getFieldsValue(true);
-      console.log('fieldsValue:', fieldsValue);
 
-      // Calculate duration in days
-      const endDate = fieldsValue.endDate?.toDate();
-      console.log('endDate:', endDate);
-      const currentDate = new Date();
-      const durationInMs = endDate.getTime() - currentDate.getTime();
-      const durationInDays = Math.ceil(durationInMs / (1000 * 60 * 60 * 24));
+      if (pollForm.fundingType === 'unfunded') {
+        const pollInput = {
+          creator: AAaddress,
+          subject: pollForm.subject,
+          description: pollForm.description,
+          category: pollForm.category,
+          viewType: pollForm.viewType,
+          options: pollForm.options,
+          durationDays: parseInt(pollForm.duration || "90"),
+          isOpenImmediately: pollForm.openImmediately
+        };
 
-      const rewardPerResponse = parseFloat(form.getFieldValue("rewardPerResponse"));
-      const maxResponses = parseFloat(form.getFieldValue("maxResponses"));
-      const targetFund = (rewardPerResponse * maxResponses).toPrecision(12);
-      console.log('target fund', targetFund)
+        await execute({
+          function: 'createUnfundedPoll',
+          contractAddress: CONTRACT_ADDRESSES.dpollsContract,
+          abi: POLLS_DAPP_ABI,
+          params: [pollInput],
+          value: 0
+        });
 
-      const pollData = {
-        ...fieldsValue,
-        options: fieldsValue.options.map((item: any) => item.text),
-        endDate: endDate,
-        duration: durationInDays,
-        targetFund: targetFund.toString(),
-      };
+      } else {
+        const rewardPerResponse = pollForm.rewardDistribution === "split" ? "0" : pollForm.rewardPerResponse;
+        let value = null;
+        if (pollForm.fundingType === "self-funded") {
+          value = ethers.utils.parseEther(pollForm.targetFund);
+        } else {
+          value = ethers.utils.parseEther("0");
+        }
+        const pollInput = {
+          creator: AAaddress,
+          subject: pollForm.subject,
+          description: pollForm.description,
+          category: pollForm.category,
+          viewType: pollForm.viewType,
+          options: pollForm.options,
+          rewardPerResponse: ethers.utils.parseEther(rewardPerResponse).toString(),
+          durationDays: parseInt(pollForm.duration || "90"),
+          maxResponses: parseInt(pollForm.maxResponses || "1000"),
+          minContribution: ethers.utils.parseEther(pollForm.minContribution || "0.000001").toString(),
+          fundingType: pollForm.fundingType,
+          isOpenImmediately: pollForm.openImmediately,
+          targetFund: ethers.utils.parseEther(pollForm.targetFund || "0").toString(),
+          rewardToken: ethers.constants.AddressZero,
+          rewardDistribution: pollForm.rewardDistribution,
+          voteWeight: "simple", // Default to simple voting
+          baseContributionAmount: ethers.utils.parseEther("1").toString(), // Default to 1 ETH as base
+          maxWeight: "10" // Default max weight of 10
+        };
 
-      console.log('Submitting poll data:', pollData);
-      await handleCreatePoll(pollData);
+        await execute({
+          function: 'createPoll',
+          contractAddress: CONTRACT_ADDRESSES.dpollsContract,
+          abi: POLLS_DAPP_ABI,
+          params: [pollInput],
+          value: value
+        });
+      }
+
+      const result = await waitForUserOpResult();
+      setUserOpHash(result.userOpHash);
+      setIsPolling(true);
       navigate("/polls/live");
+
+      if (result.result === true) {
+        setIsPolling(false);
+      } else if (result.transactionHash) {
+        setTxStatus('Transaction hash: ' + result.transactionHash);
+      }
     } catch (error) {
-      console.error('Validation failed:', error);
+      console.error('Error:', error);
+      setTxStatus('An error occurred');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
- 
-  const selectAfter = (
-    <Select defaultValue="NERO" style={{ width: "auto" }}>
-      <Option value="NERO">NERO</Option>
-    </Select>
-  );
 
-  const formItemLayout = {
-    labelCol: {
-      xs: { span: 24 },
-      sm: { span: 6 },
-    },
-    wrapperCol: {
-      xs: { span: 24 },
-      sm: { span: 14 },
-    },
-  };
+  // Form state
+  const [formData, setFormData] = useState<any>({
+    // Step 1: Content
+    subject: "",
+    description: "",
+    category: "",
+    duration: "",
+    useAI: false,
+  
+    // Step 2: Options
+    viewType: "text",
+    numOptions: 2,
+    options: [],
+  
+    // Step 3: Settings
+    fundingType: "self-funded",
+    openImmediately: true,
+    rewardDistribution: "split",
+    targetFund: "",
+    rewardPerResponse: "",
+    maxResponses: "",
+    voteWeight: "simple",
+  });
+
+  const updateFormData = (field: string, value: any) => {
+    setFormData((prev: typeof formData) => ({ ...prev, [field]: value }))
+  }
+
+  const nextStep = () => {
+    if (currentStep < STEPS.length) {
+      setIsTransitioning(true)
+      setTimeout(() => {
+        setCurrentStep(currentStep + 1)
+        setIsTransitioning(false)
+      }, 150)
+    }
+  }
+
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setIsTransitioning(true)
+      setTimeout(() => {
+        setCurrentStep(currentStep - 1)
+        setIsTransitioning(false)
+      }, 150)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await handleCreatePoll(formData);
+  }
+
+  const isStepValid = (step: number) => {
+    switch (step) {
+      case 1:
+        return (
+          formData.subject &&
+          formData.category &&
+          formData.duration
+        )
+      case 2:
+        return formData.options?.every((option: string) => option.trim() !== "")
+      case 3:
+        return formData.fundingType && (formData.rewardDistribution === "split" || formData.rewardPerResponse)
+      default:
+        return false
+    }
+  }
+
+  const renderStepContent = () => {
+    const baseClasses = `transition-all duration-300 ${isTransitioning ? "opacity-0 translate-x-4" : "opacity-100 translate-x-0"
+      }`
+
+    switch (currentStep) {
+      case 1:
+        return (
+          <div className={baseClasses}>
+            <PollStep1 formData={formData} updateFormData={updateFormData} />
+          </div>
+        )
+
+      case 2:
+        return (
+          <div className={baseClasses}>
+            <PollStep2 formData={formData} updateFormData={updateFormData} />
+          </div>
+        )
+
+      case 3:
+        return (
+          <div className={baseClasses}>
+            <PollStep3 formData={formData} updateFormData={updateFormData} />
+          </div>
+        )
+
+      default:
+        return null
+    }
+  }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-3xl" data-tour="poll-form">
-      <Form
-        layout={"horizontal"}
-        form={form}
-        name="basicInfo"
-        style={{ maxWidth: 600, margin: '0 auto' }}
-      >
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      {/* Page Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl md:text-4xl font-bold mb-4">Create New Poll</h1>
+        <p className="text-muted-foreground text-lg">
+          Set up your poll or contest and start earning from participant fees
+        </p>
+      </div>
 
-        <ConfigProvider
-          theme={{
-            components: {
-              Steps: {
-                navArrowColor: "#FFFFFF"
-              },
-            },
-          }}
-        >
-          <Steps
-            current={current}
-            percent={current / (steps.length - 1) * 100}
-            items={steps}
-            size="small" labelPlacement="vertical"
-            direction="horizontal"
-            responsive={false}
-          />
-        </ConfigProvider>
-        {/* <div style={contentStyle}>{stepItems[current].content}</div> */}
-        <Card
-          style={current == 0 ? {} : { display: "none" }}
-        >
-          <Form.Item
-            label="Subject"
-            name="subject"
-            rules={[{ required: true, message: 'Please enter a subject' }]}
-            style={{ textAlign: 'center' }}
-          >
-            <Input placeholder="Subject" />
-          </Form.Item>
-          <Form.Item
-            label="Description"
-            name="description"
-            rules={[{ required: true, message: 'Please enter a description' }]}
-            style={{ textAlign: 'center' }}
-          >
-            <Input placeholder="Enter poll description" />
-          </Form.Item>
-          <Form.Item name="category" label="Category" rules={[{ required: true }]}>
-            <Select
-              placeholder="Select a category"
-              allowClear
-            >
-              <Option value="art">Art</Option>
-              <Option value="design">Design</Option>
-              <Option value="tech">Technology</Option>
-              <Option value="defi">DeFi</Option>
-              <Option value="lifestyle">Lifestyle</Option>
-              <Option value="environment">Environment</Option>
-              <Option value="web3">Web3</Option>
-              <Option value="food">Food</Option>
-              <Option value="other">Other</Option>
-            </Select>
-          </Form.Item>
-          <Form.Item
-            label="End Date"
-            name="endDate"
-            rules={[{ required: true, message: 'Please select an end date' }]}
-            style={{ textAlign: 'center' }}
-          >
-            <DatePicker
-              onChange={onChange}
-              picker="date"
-              format="YYYY-MM-DD"
-              style={{ width: '100%' }}
-              disabledDate={(current) => {
-                return current && current < dayjs().endOf('day');
-              }}
-            />
-          </Form.Item>
-        </Card>
+      {/* Progress Indicator */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          {STEPS.map((step, index) => (
+            <div key={step.id} className="flex items-center">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${currentStep === step.id
+                    ? "bg-primary text-primary-foreground text-white"
+                    : currentStep > step.id
+                      ? "bg-green-500 text-white"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+              >
+                {currentStep > step.id ? <CheckCircle className="h-4 w-4" /> : step.id}
+              </div>
+              {index < STEPS.length - 1 && (
+                <div className={`h-0.5 w-16 md:w-32 mx-2 ${currentStep > step.id ? "bg-green-500" : "bg-muted"}`} />
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="text-center">
+          <h2 className="text-xl font-semibold">{STEPS[currentStep - 1].title}</h2>
+          <p className="text-muted-foreground">{STEPS[currentStep - 1].description}</p>
+        </div>
+        <Progress value={(currentStep / STEPS.length) * 100} className="mt-4" />
+      </div>
 
-        {/* Options */}
-        <Card
-          // className={`steps-content ${current == 1 ? "" : "hidden"}`}
-          style={current == 1 ? {} : { display: "none" }}
-        >
-          <Form.List
-            name="options"
-            initialValue={options}
-          >
-            {(fields, { add, remove }) => (
-              <>
-                {fields.map(({ key, name }) => (
-                  <Form.Item
-                    key={key}
-                    label={`Option ${name + 1}`}
-                    style={{ textAlign: 'center' }}
-                    name={[name, "text"]}
-                  >
-                    <Space.Compact style={{ width: '100%', justifyContent: 'center' }}>
-                      <Input
-                        placeholder={`Enter option ${name + 1}`}
-                      />
-                      {fields.length > 2 && (
-                        <Button
-                          color="default"
-                          type="text"
-                          danger
-                          icon={<Trash2 size={16} />}
-                          onClick={() => remove(name)}
-                        />
-                      )}
-                    </Space.Compact>
-                  </Form.Item>
-                ))}
-                <Form.Item style={{ textAlign: 'center' }}>
-                  <Button
-                    color="default"
-                    type="dashed"
-                    onClick={() => add({ text: "" })}
-                    block
-                    icon={<PlusCircle size={16} />}
-                  >
-                    Add Option
-                  </Button>
-                </Form.Item>
-              </>
-            )}
-          </Form.List>
-        </Card>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Step Content */}
+        <div className="min-h-[500px]">{renderStepContent()}</div>
 
-        {/* Settings */}
-        <Card
-          style={current == 2 ? {} : { display: "none" }}
-        >
-          <Form.Item
-            label="Reward per Response"
-            name="rewardPerResponse"
-            tooltip="(in NERO units)"
-            rules={[
-              { required: true, message: 'Please enter reward amount' },
-            ]}
-            style={{ textAlign: 'center' }}
+        {/* Navigation Buttons */}
+        <div className="flex justify-between pt-6 border-t">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={prevStep}
+            disabled={currentStep === 1}
+            className="flex items-center"
           >
-            <InputNumber
-              placeholder="Amount in NERO that responders will receive"
-              min="0.001"
-              step="0.001"
-              addonAfter={selectAfter}
-              stringMode
-              style={{ width: '100%' }}
-            />
-          </Form.Item>
-          <Form.Item
-            label="Max Responses"
-            name="maxResponses"
-            rules={[
-              { required: true, message: 'Please enter max responses' },
-            ]}
-            style={{ textAlign: 'center' }}
-          >
-            <InputNumber 
-              placeholder="Limit to the number of responses the poll will gather" 
-              min="1"
-              style={{ width: '100%' }}
-            />
-          </Form.Item>
-          <Form.Item
-            label="Min Contribution"
-            name="minContribution"
-            tooltip="(in NERO units)"
-            rules={[
-              { required: true, message: 'Please enter minimum contribution' },
-            ]}
-            style={{ textAlign: 'center' }}
-          >
-            <InputNumber 
-              placeholder="Minimum amount in NERO that funders (if crowdfunding) can contribute"
-              min="0.001"
-              step="0.001"
-              addonAfter={selectAfter}
-              stringMode
-              style={{ width: '100%' }}
-            />
-          </Form.Item>
-        </Card>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Previous
+          </Button>
 
-        <div style={{ marginTop: 24 }}>
-          {current > 0 && (
-            <Button
-              color="default"
-              style={{ margin: '0 8px' }} onClick={() => prev()}
-              disabled={loading}
-            >
-              Previous
+          {currentStep === STEPS.length ? (
+            <Button type="submit" className="flex items-center text-white">
+              Create Poll
+              <CheckCircle className="h-4 w-4 ml-2" />
             </Button>
-          )}
-          {current < steps.length - 1 && (
+          ) : (
             <Button
-              color="default" variant="solid"
-              onClick={() => next()}
+              type="button"
+              onClick={nextStep}
+              disabled={!isStepValid(currentStep)}
+              className="flex items-center text-white"
             >
               Next
-            </Button>
-          )}
-          {current === steps.length - 1 && (
-            <Button
-              color="default" variant="solid"
-              onClick={handleSubmit}
-              loading={loading}
-            >
-              Submit
+              <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           )}
         </div>
-      </Form>
+
+        {/* Step Validation Info */}
+        {!isStepValid(currentStep) && (
+          <div className="text-center text-sm text-muted-foreground">
+            Please fill in all required fields to continue
+          </div>
+        )}
+      </form>
+
+      {/* Cost Info */}
+      <div className="mt-8 text-center text-sm text-muted-foreground">
+        <p>Deployment cost: ~$0.50 USD (varies with gas prices)</p>
+      </div>
     </div>
   )
 }

@@ -3,21 +3,35 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui_v2/avatar";
 import { Badge } from "@/components/ui_v2/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui_v2/card";
+import { WalletConnector } from "@/components/wallet/wallet-connector";
 import { POLLS_DAPP_ABI, } from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts';
 import { useSendUserOp, useSignature } from '@/hooks';
 import ManagePoll from "@/pages/simple/manage-poll";
 import { PollState } from "@/types/poll";
 import { getCompressedAddress } from "@/utils/addressUtil";
-import { Button, Form, InputNumber, Modal, Select, Space } from 'antd';
+import { Button, Form, InputNumber, Modal, Result, Select, Space } from 'antd';
 import { ethers } from 'ethers';
 import { CircleDollarSign, Clock, Users } from "lucide-react";
 import { useState } from "react";
 
-export default function ManagePolls({ AAaddress, handleTabChange, polls, fetchPolls }:
-  { AAaddress: string, handleTabChange: (tab: string) => void, polls: PollState[], fetchPolls: () => void }) {
+interface ManagePollsProps {
+  AAaddress: string
+  polls: PollState[]
+  fetchPolls: () => void
+  handleTabChange: (tab: string) => void
+  isWalletConnected: boolean
+  setIsWalletConnected: (isWalletConnected: boolean) => void
+}
+
+export default function ManagePolls({ AAaddress, handleTabChange, polls, fetchPolls, isWalletConnected, setIsWalletConnected }: ManagePollsProps) {
+
+  const { isConnected } = useSignature();
+
   // Filter polls based on their status
-  const createdPolls = polls.filter(poll => poll.creator === AAaddress)
+  const createdPolls = polls.filter(poll =>  {
+    return poll.creator?.toLocaleLowerCase() === AAaddress.toLocaleLowerCase()
+  });
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -30,10 +44,20 @@ export default function ManagePolls({ AAaddress, handleTabChange, polls, fetchPo
             ))}
             {createdPolls.length === 0 && (
               <div className="col-span-3 text-center py-10">
-                <p className="text-gray-500">You haven't created any polls yet</p>
-                <Button className="mt-4" onClick={() => handleTabChange('create-poll')}>
-                  Create Your First Poll
-                </Button>
+                {isConnected ?
+                  <>
+                    <Result
+                      status="404"
+                      title="Oops!"
+                      subTitle="You haven't created any polls yet."
+                    />
+                    <Button className="mt-4" onClick={() => handleTabChange('create-poll')}>
+                      Create Your First Poll
+                    </Button>
+                  </>
+                  :
+                  <WalletConnector isWalletConnected={isWalletConnected} setIsWalletConnected={setIsWalletConnected} />
+                }
               </div>
             )}
           </div>
@@ -345,6 +369,7 @@ function PollCard({ poll, type, fetchPolls, AAaddress, }:
         abi: POLLS_DAPP_ABI,
         params: [
           poll.id,
+          AAaddress,
         ],
         value: 0,
       });
@@ -428,9 +453,8 @@ function PollCard({ poll, type, fetchPolls, AAaddress, }:
   const funds = parseFloat(ethers.utils.formatEther(poll.funds || '0'));
   const targetFund = parseFloat(ethers.utils.formatEther(poll.targetFund || '0'));
   const targetReached = funds >= targetFund;
-
-  const isEnded = poll.endTime >= new Date();
-  const targetResponseCountReached = poll.responses.length >= poll.maxResponses;
+  const isEnded = new Date() >= poll.endTime;
+  const targetResponseCountReached = Number(poll.responses.length) >= Number(poll.maxResponses);
 
   return (
     <Card className="overflow-hidden">

@@ -3,18 +3,27 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui_v2/avatar";
 import { Badge } from "@/components/ui_v2/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui_v2/card";
+import { WalletConnector } from "@/components/wallet/wallet-connector";
 import { POLLS_DAPP_ABI, } from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts';
 import { useSendUserOp, useSignature } from '@/hooks';
 import { PollState } from "@/types/poll";
 import { getCompressedAddress } from "@/utils/addressUtil";
-import { Button, Form, Input, InputNumber, Modal, Select } from 'antd';
+import { Button, Form, Input, InputNumber, Modal, Result, Select } from 'antd';
 import { ethers } from 'ethers';
 import { CircleDollarSign, Clock, Users } from "lucide-react";
 import { useState } from "react";
 
-export default function FundingPolls({ polls, fetchPolls, handleTabChange }:
-  { polls: PollState[], fetchPolls: () => void, handleTabChange: (tab: string) => void, }) {
+interface FundingPollsProps {
+  polls: PollState[]
+  fetchPolls: () => void
+  handleTabChange: (tab: string) => void
+  isWalletConnected: boolean
+  setIsWalletConnected: (isWalletConnected: boolean) => void
+}
+
+export default function FundingPolls({ polls, fetchPolls, handleTabChange, isWalletConnected, setIsWalletConnected }: FundingPollsProps) {
+  const { isConnected } = useSignature();
   // Filter polls based on their status
   const fundingPolls = polls.filter(poll => poll.status === "for-funding")
   console.log('fundingPolls', fundingPolls)
@@ -32,10 +41,20 @@ export default function FundingPolls({ polls, fetchPolls, handleTabChange }:
         ))}
         {fundingPolls.length === 0 && (
           <div className="col-span-3 text-center py-10">
-            <p className="text-gray-500">No polls are currently open for funding</p>
-            <Button className="mt-4" onClick={() => handleTabChange('create-poll')}>
-              Create Your First Poll
-            </Button>
+            {isConnected ?
+              <>
+                <Result
+                  status="404"
+                  title="Oops!"
+                  subTitle="No polls are currently open for funding"
+                />
+                <Button className="mt-4" onClick={() => handleTabChange('create-poll')}>
+                  Create Your First Poll
+                </Button>
+              </>
+              :
+              <WalletConnector isWalletConnected={isWalletConnected} setIsWalletConnected={setIsWalletConnected} />
+             }
           </div>
         )}
       </div>

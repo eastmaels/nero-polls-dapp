@@ -16,7 +16,7 @@ export const ERC20_ABI = [
 
 export const POLLS_DAPP_ABI = [
   // Poll Creation and Management
-  'function createPoll(tuple(string subject, string description, string category, string viewType, string[] options, uint256 rewardPerResponse, uint256 durationDays, uint256 maxResponses, uint256 minContribution, string fundingType, bool isOpenImmediately, uint256 targetFund, address rewardToken, string rewardDistribution) params) external payable',
+  'function createPoll(tuple(address creator, string subject, string description, string category, string viewType, string[] options, uint256 rewardPerResponse, uint256 durationDays, uint256 maxResponses, uint256 minContribution, string fundingType, bool isOpenImmediately, uint256 targetFund, address rewardToken, string rewardDistribution) params) external payable',
   'function createUnfundedPoll(tuple(string subject, string description, string category, string viewType, string[] options, uint256 durationDays, bool isOpenImmediately) params) external',
   'function submitResponse(uint256 pollId, string response) external payable',
   'function closePoll(uint256 pollId) external payable',
@@ -27,7 +27,7 @@ export const POLLS_DAPP_ABI = [
   'function updateTargetFund(uint256 pollId, uint256 newTargetFund) external payable',
   'function fundPoll(uint256 pollId) external payable',
   'function fundPollWithToken(uint256 pollId, uint256 amount) external',
-  'function claimReward(uint256 pollId) external payable',
+  'function claimReward(uint256 pollId, address claimer) external payable',
   
   // Token Management
   'function whitelistToken(address token) external',

@@ -2,7 +2,6 @@
 
 import { SendUserOpContext } from '@/contexts';
 import { useSendUserOp, useSignature } from '@/hooks';
-import { ConnectButton as RainbowConnectButton } from '@rainbow-me/rainbowkit';
 
 import { POLLS_DAPP_ABI, } from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts';
@@ -17,10 +16,11 @@ import { Separator } from "@/components/ui_v3/separator";
 import { PollState } from "@/types/poll";
 import { getCompressedAddress } from "@/utils/addressUtil";
 import { calculateTimeLeft } from "@/utils/timeUtils";
-import { Modal, Tag } from "antd";
+import { Modal, Tag, Tooltip } from "antd";
 import { ethers } from "ethers";
 import { CheckCircle, Clock, Share2, Trophy, Users, Vote } from "lucide-react";
 import Image from "next/image";
+import { WalletConnector } from '@/components/wallet/wallet-connector';
 
 interface PollOption {
   id: string
@@ -148,6 +148,21 @@ export function VotePollModal({ featureFlagNew, poll, isOpen, onClose, fetchPoll
     }
   }
 
+  function renderNotOpenMessage(poll: any): import("react").ReactNode {
+    switch (poll.status) {
+      case "open":
+        return "This poll is not yet accepting responses."
+      case "active":
+        return null
+      case "for-claiming":
+        return "Claim your rewards"
+      case "closed":
+        return "This poll is closed and no longer accepting responses."
+      default:
+        return null
+    }
+  }
+
   return (
     <Modal
       title={poll.subject}
@@ -165,7 +180,7 @@ export function VotePollModal({ featureFlagNew, poll, isOpen, onClose, fetchPoll
                 poll.status === "new" ? "#108ee9" : poll.status === "for-claiming" ? "#f50" : "#87d068"
               }
             >
-              {poll.category}
+              {poll.category || "uncategorized"}
             </Tag>
             {poll.status && <Badge className="text-white" variant={getStatusColor(poll.status)}>{poll.status}</Badge>}
           </div>
@@ -227,163 +242,130 @@ export function VotePollModal({ featureFlagNew, poll, isOpen, onClose, fetchPoll
           </div>
         </div>
 
+        {renderNotOpenMessage(poll)}
+ 
         <Separator />
 
         {/* Voting Section */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Cast Your Vote</h3>
-            <p className="text-sm text-muted-foreground">Total votes:
-              {featureFlagNew ?
-                poll.responses.length
-                :
-                poll.totalVotes.toLocaleString()
-              }
-            </p>
-          </div>
+        {poll.status === "open" &&
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Cast Your Vote</h3>
+              <p className="text-sm text-muted-foreground">Total votes:
+                {featureFlagNew ?
+                  poll.responses.length
+                  :
+                  poll.totalVotes.toLocaleString()
+                }
+              </p>
+            </div>
 
-          {hasVoted ? (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-green-600 mb-4">
-                <CheckCircle className="h-5 w-5" />
-                <span className="font-medium">You have voted! Here are the current results:</span>
+            {hasVoted ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-green-600 mb-4">
+                  <CheckCircle className="h-5 w-5" />
+                  <span className="font-medium">You have voted! Here are the current results:</span>
+                </div>
+
+                {modOptions.map((option: PollOption) => (
+                  <div key={option.id} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                        {poll.viewType === "gallery" && option.image && (
+                          <Image
+                            src={option.image || "/placeholder.svg"}
+                            alt={option.text}
+                            width={40}
+                            height={40}
+                            className="rounded object-cover"
+                          />
+                        )}
+                        <span className="font-medium">{option.text}</span>
+                        {selectedOption === option.text && (
+                          <Badge variant="outline" className="text-green-600 border-green-600">
+                            Your vote
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold">{option.percentage.toFixed(1)}%</p>
+                        <p className="text-sm text-muted-foreground">{option.votes} votes</p>
+                      </div>
+                    </div>
+                    <Progress value={option.percentage} className="h-2" />
+                  </div>
+                ))}
               </div>
-
-              {modOptions.map((option: PollOption) => (
-                <div key={option.id} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-3">
+            ) : (
+              <div className="space-y-4">
+                <RadioGroup
+                  value={selectedOption}
+                  onValueChange={setSelectedOption}
+                  disabled={isVoting || hasVoted || poll.status !== "open" || !isConnected}
+                >
+                  {modOptions.map((option: PollOption) => (
+                    <div
+                      key={option.id}
+                      className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <RadioGroupItem value={option.id} id={option.id} />
                       {poll.viewType === "gallery" && option.image && (
                         <Image
                           src={option.image || "/placeholder.svg"}
                           alt={option.text}
-                          width={40}
-                          height={40}
+                          width={60}
+                          height={60}
                           className="rounded object-cover"
                         />
                       )}
-                      <span className="font-medium">{option.text}</span>
-                      {selectedOption === option.text && (
-                        <Badge variant="outline" className="text-green-600 border-green-600">
-                          Your vote
-                        </Badge>
-                      )}
+                      <Label htmlFor={option.id} className="flex-1 cursor-pointer font-medium">
+                        {option.text}
+                      </Label>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold">{option.percentage.toFixed(1)}%</p>
-                      <p className="text-sm text-muted-foreground">{option.votes} votes</p>
-                    </div>
-                  </div>
-                  <Progress value={option.percentage} className="h-2" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <RadioGroup value={selectedOption} onValueChange={setSelectedOption}>
-                {modOptions.map((option: PollOption) => (
-                  <div
-                    key={option.id}
-                    className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                  ))}
+                </RadioGroup>
+
+                {isConnected ? 
+                  <Tooltip title={poll.status !== "open" ? "Poll not yet accepting responses" : null}>
+                  <Button
+                    onClick={handleOptionVote}
+                    disabled={isVoting || hasVoted || poll.status !== "open"}
+                    className="w-full text-white" size="lg"
                   >
-                    <RadioGroupItem value={option.id} id={option.id} />
-                    {poll.viewType === "gallery" && option.image && (
-                      <Image
-                        src={option.image || "/placeholder.svg"}
-                        alt={option.text}
-                        width={60}
-                        height={60}
-                        className="rounded object-cover"
-                      />
+                    {isVoting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                        Submitting Vote...
+                      </>
+                    ) : (
+                      <>
+                        <Vote className="h-4 w-4 mr-2" />
+                        Cast Vote
+                      </>
                     )}
-                    <Label htmlFor={option.id} className="flex-1 cursor-pointer font-medium">
-                      {option.text}
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
+                  </Button>
+                  </Tooltip>
+                :
+                  <>
+                    {/* <WalletConnectRoundedButton
+                      onClick={openConnectModal}
+                      AAaddress={AAaddress}
+                      isConnected={connected}
+                    /> */}
+                    <WalletConnector isWalletConnected={isWalletConnected} setIsWalletConnected={setIsWalletConnected} />
+                  </>
+                }
 
-              {isConnected ? 
-                <Button onClick={handleOptionVote} disabled={isVoting || hasVoted} className="w-full text-white" size="lg">
-                  {isVoting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                      Submitting Vote...
-                    </>
-                  ) : (
-                    <>
-                      <Vote className="h-4 w-4 mr-2" />
-                      Cast Vote
-                    </>
-                  )}
-                </Button>
-              :
-                <>
-                  {/* <WalletConnectRoundedButton
-                    onClick={openConnectModal}
-                    AAaddress={AAaddress}
-                    isConnected={connected}
-                  /> */}
-                  <RainbowConnectButton.Custom>
-                    {({ account, chain, openChainModal, openConnectModal, authenticationStatus, mounted }) => {
-                      const ready = mounted && authenticationStatus !== 'loading'
-                      const connected = Boolean(
-                        ready &&
-                          account &&
-                          chain &&
-                          (!authenticationStatus || authenticationStatus === 'authenticated'),
-                      )
-
-                      if (isWalletConnected !== connected) {
-                        setIsWalletConnected(connected)
-                      }
-
-                      if (!ready) return null
-                      if (chain?.unsupported) {
-                        return (
-                          <Button
-                            className="w-full text-white" size="lg"
-                            onClick={openConnectModal}
-                          >
-                            Connect Wallet
-                          </Button>
-                        )
-                      }
-
-                      if (connected) {
-                        return (
-                          <Button
-                            className="w-full text-white" size="lg"
-                            onClick={openConnectModal}
-                          >
-                            Connect Wallet
-                          </Button>
-                        );
-                      }
-                      if (!connected) {
-                        return (
-                          <Button
-                            className="w-full text-white" size="lg"
-                            onClick={openConnectModal}
-                          >
-                            Connect Wallet
-                          </Button>
-                        )
-                      }
-                    }}
-                  </RainbowConnectButton.Custom>
-                </>
-              }
-
-              {poll.status === "Ended" && (
-                <p className="text-center text-muted-foreground text-sm">
-                  This poll has ended. You can no longer vote.
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-
+                {poll.status === "Ended" && (
+                  <p className="text-center text-muted-foreground text-sm">
+                    This poll has ended. You can no longer vote.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        }
+        
         <Separator />
 
         {/* Poll Details */}

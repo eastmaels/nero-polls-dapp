@@ -184,7 +184,6 @@ export default function LandingPage() {
   const [email, setEmail] = useState("")
   const [selectedPoll, setSelectedPoll] = useState<any | null>(null)
   const [isPollModalOpen, setIsPollModalOpen] = useState(false)
-  const [isCreatePollModalOpen, setIsCreatePollModalOpen] = useState(false)
   const [featureFlagNew, setFeatureFlagNew] = useState(true);
 
   if (featureFlagNew) {
@@ -205,13 +204,6 @@ export default function LandingPage() {
   const closePollModal = () => {
     setIsPollModalOpen(false)
     setSelectedPoll(null)
-  }
-
-  const handleCreatePoll = (poll: any) => {
-    setIsCreatePollModalOpen(true)
-  }
-  const closeCreatePollModal = () => {
-    setIsCreatePollModalOpen(false)
   }
 
   useEffect(() => {
