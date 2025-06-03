@@ -1,6 +1,7 @@
 import { Mail, Dice5, Trophy } from "lucide-react"
 import { Button } from "@/components/ui_v3/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui_v3/card"
+import { Badge } from "antd"
 
 interface RightSidebarProps {
   isMobile: boolean
@@ -20,9 +21,11 @@ export default function RightSidebar({ isMobile }: RightSidebarProps) {
           <CardDescription>Interactive envelope game</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button variant="outline" size="sm" className="w-full">
-            Play Now
-          </Button>
+          <Badge.Ribbon text="Soon">
+            <Button variant="outline" size="sm" className="w-full" disabled>
+              Play Now
+            </Button>
+          </Badge.Ribbon>
         </CardContent>
       </Card>
 
@@ -35,9 +38,11 @@ export default function RightSidebar({ isMobile }: RightSidebarProps) {
           <CardDescription>Dungeons & Dragons games</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button variant="outline" size="sm" className="w-full">
-            View Games
-          </Button>
+          <Badge.Ribbon text="Soon">
+            <Button variant="outline" size="sm" className="w-full" disabled>
+              View Games
+            </Button>
+          </Badge.Ribbon>
         </CardContent>
       </Card>
 
@@ -50,13 +55,15 @@ export default function RightSidebar({ isMobile }: RightSidebarProps) {
           <CardDescription>Top poll participants</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button variant="outline" size="sm" className="w-full">
-            View Leaderboard
-          </Button>
+          <Badge.Ribbon text="Soon">
+            <Button variant="outline" size="sm" className="w-full" disabled>
+              View Leaderboard
+            </Button>
+            </Badge.Ribbon>
         </CardContent>
       </Card>
 
-      {!isMobile && (
+      {/* {!isMobile && (
         <div className="mt-auto">
           <Card className="bg-primary/5">
             <CardHeader className="pb-2">
@@ -80,7 +87,7 @@ export default function RightSidebar({ isMobile }: RightSidebarProps) {
             </CardContent>
           </Card>
         </div>
-      )}
+      )} */}
     </div>
   )
 }

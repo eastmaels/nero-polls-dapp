@@ -1,24 +1,26 @@
 "use client"
 
-import { useState } from "react"
-import { useSignature, useConfig, useSendUserOp } from '@/hooks';
+import { SendUserOpContext } from '@/contexts';
+import { useSendUserOp, useSignature } from '@/hooks';
+import { ConnectButton as RainbowConnectButton } from '@rainbow-me/rainbowkit';
+
 import { POLLS_DAPP_ABI, } from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts';
+import { useContext, useEffect, useState } from "react";
 
-import { Tag, Modal } from "antd"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui_v3/dialog"
-import { Button } from "@/components/ui_v3/button"
-import { Badge } from "@/components/ui_v3/badge"
-import { Progress } from "@/components/ui_v3/progress"
-import { RadioGroup, RadioGroupItem } from "@/components/ui_v3/radio-group"
-import { Label } from "@/components/ui_v3/label"
-import { Separator } from "@/components/ui_v3/separator"
-import { Users, Trophy, Clock, Vote, Share2, ExternalLink, CheckCircle } from "lucide-react"
-import Image from "next/image"
-import { PollState } from "@/types/poll"
-import { ethers } from "ethers"
-import { calculateTimeLeft } from "@/utils/timeUtils"
-import { getCompressedAddress } from "@/utils/addressUtil"
+import { Badge } from "@/components/ui_v3/badge";
+import { Button } from "@/components/ui_v3/button";
+import { Label } from "@/components/ui_v3/label";
+import { Progress } from "@/components/ui_v3/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui_v3/radio-group";
+import { Separator } from "@/components/ui_v3/separator";
+import { PollState } from "@/types/poll";
+import { getCompressedAddress } from "@/utils/addressUtil";
+import { calculateTimeLeft } from "@/utils/timeUtils";
+import { Modal, Tag } from "antd";
+import { ethers } from "ethers";
+import { CheckCircle, Clock, Share2, Trophy, Users, Vote } from "lucide-react";
+import Image from "next/image";
 
 interface PollOption {
   id: string
@@ -37,17 +39,26 @@ interface PollModalProps {
 }
 
 export function VotePollModal({ featureFlagNew, poll, isOpen, onClose, fetchPolls }: PollModalProps) {
-  console.log('featureFlagNew', featureFlagNew)
-  console.log('modal poll', poll)
   const [selectedOption, setSelectedOption] = useState<string>("")
-  const [hasVoted, setHasVoted] = useState(poll?.userHasVoted || false)
+  //const [hasVoted, setHasVoted] = useState(poll?.userHasVoted || false)
 
-  const { isConnected, } = useSignature();
+  const { isConnected, AAaddress } = useSignature();
   const { execute, waitForUserOpResult } = useSendUserOp();
   const [userOpHash, setUserOpHash] = useState<string | null>(null);
   const [txStatus, setTxStatus] = useState<string>('');
   const [isPolling, setIsPolling] = useState(false);
   const [isVoting, setIsVoting] = useState(false);
+
+  const hasVoted = poll?.responsesWithAddress?.some(response => response.address === AAaddress);
+
+  const { isWalletPanel, setIsWalletPanel } = useContext(SendUserOpContext)!
+  const [isWalletConnected, setIsWalletConnected] = useState(false)
+
+  useEffect(() => {
+    if (!isWalletConnected) {
+      setIsWalletPanel(false)
+    }
+  }, [isWalletConnected, setIsWalletPanel])
 
   if (!poll) return null
 
@@ -60,8 +71,6 @@ export function VotePollModal({ featureFlagNew, poll, isOpen, onClose, fetchPoll
     setIsVoting(true);
     setUserOpHash(null);
     setTxStatus('');
-
-    console.log('selectedOption', selectedOption)
 
     try {
       await execute({
@@ -112,7 +121,6 @@ export function VotePollModal({ featureFlagNew, poll, isOpen, onClose, fetchPoll
       percentage: computePercentage(poll.responses, option)
     };
   });
-  console.log('modOptions', modOptions)
 
   const handleShare = () => {
     if (navigator.share) {
@@ -295,19 +303,77 @@ export function VotePollModal({ featureFlagNew, poll, isOpen, onClose, fetchPoll
                 ))}
               </RadioGroup>
 
-              <Button onClick={handleOptionVote} disabled={isVoting} className="w-full text-white" size="lg">
-                {isVoting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                    Submitting Vote...
-                  </>
-                ) : (
-                  <>
-                    <Vote className="h-4 w-4 mr-2" />
-                    Cast Vote
-                  </>
-                )}
-              </Button>
+              {isConnected ? 
+                <Button onClick={handleOptionVote} disabled={isVoting || hasVoted} className="w-full text-white" size="lg">
+                  {isVoting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                      Submitting Vote...
+                    </>
+                  ) : (
+                    <>
+                      <Vote className="h-4 w-4 mr-2" />
+                      Cast Vote
+                    </>
+                  )}
+                </Button>
+              :
+                <>
+                  {/* <WalletConnectRoundedButton
+                    onClick={openConnectModal}
+                    AAaddress={AAaddress}
+                    isConnected={connected}
+                  /> */}
+                  <RainbowConnectButton.Custom>
+                    {({ account, chain, openChainModal, openConnectModal, authenticationStatus, mounted }) => {
+                      const ready = mounted && authenticationStatus !== 'loading'
+                      const connected = Boolean(
+                        ready &&
+                          account &&
+                          chain &&
+                          (!authenticationStatus || authenticationStatus === 'authenticated'),
+                      )
+
+                      if (isWalletConnected !== connected) {
+                        setIsWalletConnected(connected)
+                      }
+
+                      if (!ready) return null
+                      if (chain?.unsupported) {
+                        return (
+                          <Button
+                            className="w-full text-white" size="lg"
+                            onClick={openConnectModal}
+                          >
+                            Connect Wallet
+                          </Button>
+                        )
+                      }
+
+                      if (connected) {
+                        return (
+                          <Button
+                            className="w-full text-white" size="lg"
+                            onClick={openConnectModal}
+                          >
+                            Connect Wallet
+                          </Button>
+                        );
+                      }
+                      if (!connected) {
+                        return (
+                          <Button
+                            className="w-full text-white" size="lg"
+                            onClick={openConnectModal}
+                          >
+                            Connect Wallet
+                          </Button>
+                        )
+                      }
+                    }}
+                  </RainbowConnectButton.Custom>
+                </>
+              }
 
               {poll.status === "Ended" && (
                 <p className="text-center text-muted-foreground text-sm">

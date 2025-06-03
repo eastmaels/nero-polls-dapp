@@ -27,19 +27,19 @@ const tourSteps: TourStep[] = [
   {
     id: "create-poll-nav",
     title: "Creating Polls",
-    description: "Click here to start creating a new poll. You can also use the + icon in the floating footer.",
+    description: "Click here to start creating a new poll.",
     target: "create-poll-nav",
     position: "right",
     action: "Click to navigate to poll creation",
   },
-  {
-    id: "create-poll-footer",
-    title: "Alternative: Quick Create",
-    description: "You can also quickly create a poll using this floating action button at the bottom of the screen.",
-    target: "create-poll-footer",
-    position: "top",
-    action: "Click the + icon to create a poll",
-  },
+  // {
+  //   id: "create-poll-footer",
+  //   title: "Alternative: Quick Create",
+  //   description: "You can also quickly create a poll using this floating action button at the bottom of the screen.",
+  //   target: "create-poll-footer",
+  //   position: "top",
+  //   action: "Click the + icon to create a poll",
+  // },
   {
     id: "poll-form",
     title: "Poll Creation Form",

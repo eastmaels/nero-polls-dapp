@@ -9,17 +9,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Users, Trophy, Clock, Eye, Filter } from "lucide-react"
 
 import { useSignature, useConfig, useSendUserOp } from '@/hooks';
-import { POLLS_DAPP_ABI,  } from '@/constants/abi';
+import { POLLS_DAPP_ABI, } from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts';
 import { ethers } from 'ethers';
 import { convertTimestampToDate } from '@/utils/format';
 import { PollState } from '@/types/poll';
 import LandingPageHeader from "@/pages/landing/landing-header"
 import { calculateTimeLeft } from "@/utils/timeUtils"
+import { VotePollModal } from "@/components/modals/vote-poll-modal"
 
 
 export default function LivePollsPage() {
-  
+
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -33,15 +34,15 @@ export default function LivePollsPage() {
 
   useEffect(() => {
     fetchPolls();
-  }, []); 
+  }, []);
 
   const fetchPolls = async () => {
     try {
       setIsLoading(true);
-      
+
       // Create a provider using the RPC URL from config
       const provider = new ethers.providers.JsonRpcProvider(config.rpcUrl);
-      
+
       // Create a contract instance for the NFT contract
       const pollsContract = new ethers.Contract(
         CONTRACT_ADDRESSES.dpollsContract,
@@ -49,7 +50,7 @@ export default function LivePollsPage() {
         provider
       );
       console.log('pollsContract', pollsContract)
-      
+
       // Get all poll IDs
       const allPollIds = await pollsContract.getAllPollIds();
       if (allPollIds.length > 0) {
@@ -74,7 +75,7 @@ export default function LivePollsPage() {
               });
 
               console.log('pollDetails', pollDetails)
-              
+
               // Format the poll data
               return {
                 id: pollId,
@@ -105,7 +106,7 @@ export default function LivePollsPage() {
 
         // Filter out any null values from failed fetches
         const validPolls = fetchedPolls.filter(poll => poll !== null);
-        
+
         if (validPolls.length > 0) {
           setPolls(validPolls);
           setTxStatus(`Found ${validPolls.length} Polls`);
@@ -121,7 +122,7 @@ export default function LivePollsPage() {
     } catch (error) {
       console.error('Error fetching polls:', error);
       setTxStatus('Error fetching polls');
-      
+
       // Fallback to sample polls in case of error
       setPolls([]);
     } finally {
@@ -250,70 +251,83 @@ export default function LivePollsPage() {
   function PollCard({ poll, fetchPolls, AAaddress }:
     { poll: any, type: string, fetchPolls: () => void, AAaddress: string, }) {
 
-      const { isConnected, } = useSignature();
-      const { execute, waitForUserOpResult } = useSendUserOp();
-      const [userOpHash, setUserOpHash] = useState<string | null>(null);
-      const [txStatus, setTxStatus] = useState<string>('');
-      const [isPolling, setIsPolling] = useState(false);
-      const [isVoting, setIsVoting] = useState(false);
-    
-      const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
-      const isVoted = poll.responsesWithAddress?.some(response => response.address === AAaddress);
-    
-      const handleOptionVote = async (option) => {
-        if (!isConnected) {
-          alert('Please connect your wallet first');
-          return;
-        }
-    
-        setIsVoting(true);
-        setUserOpHash(null);
-        setTxStatus('');
-    
-        try {
-          await execute({
-            function: 'submitResponse',
-            contractAddress: CONTRACT_ADDRESSES.dpollsContract,
-            abi: POLLS_DAPP_ABI, // Use the specific ABI with mint function
-            params: [
-              poll.id,
-              option.text,
-            ],
-            value: 0,
-          });
-    
-          const result = await waitForUserOpResult();
-          setUserOpHash(result.userOpHash);
-          setIsPolling(true);
-    
-          if (result.result === true) {
-            setIsPolling(false);
-            fetchPolls();
-          } else if (result.transactionHash) {
-            setTxStatus('Transaction hash: ' + result.transactionHash);
-          }
-        } catch (error) {
-          console.error('Error:', error);
-          setTxStatus('An error occurred');
-        } finally {
-          setIsVoting(false);
-          setIsVoteModalOpen(false);
-        }
-    
-      };
-    
-      const computePercentage = (responses: string[], option: string) => {
-        if (responses?.length === 0) {
-          return 0;
-        }
-        const totalResponses = responses?.length;
-        const optionCount = responses?.filter(response => response === option).length;
-        return Math.floor((optionCount / totalResponses) * 100);
+    const { isConnected, } = useSignature();
+    const { execute, waitForUserOpResult } = useSendUserOp();
+    const [userOpHash, setUserOpHash] = useState<string | null>(null);
+    const [txStatus, setTxStatus] = useState<string>('');
+    const [isPolling, setIsPolling] = useState(false);
+    const [isVoting, setIsVoting] = useState(false);
+
+    const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
+    const isVoted = poll.responsesWithAddress?.some(response => response.address === AAaddress);
+
+    const [selectedPoll, setSelectedPoll] = useState<any | null>(null)
+    const [isPollModalOpen, setIsPollModalOpen] = useState(false)
+
+    const handleOptionVote = async (option) => {
+      if (!isConnected) {
+        alert('Please connect your wallet first');
+        return;
       }
-    
-      const modOptions = poll.options.map((option) => {
-        return { text: option, percentage: computePercentage(poll.responses, option) };
-      });
+
+      setIsVoting(true);
+      setUserOpHash(null);
+      setTxStatus('');
+
+      try {
+        await execute({
+          function: 'submitResponse',
+          contractAddress: CONTRACT_ADDRESSES.dpollsContract,
+          abi: POLLS_DAPP_ABI, // Use the specific ABI with mint function
+          params: [
+            poll.id,
+            option.text,
+          ],
+          value: 0,
+        });
+
+        const result = await waitForUserOpResult();
+        setUserOpHash(result.userOpHash);
+        setIsPolling(true);
+
+        if (result.result === true) {
+          setIsPolling(false);
+          fetchPolls();
+        } else if (result.transactionHash) {
+          setTxStatus('Transaction hash: ' + result.transactionHash);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        setTxStatus('An error occurred');
+      } finally {
+        setIsVoting(false);
+        setIsVoteModalOpen(false);
+      }
+
+    };
+
+    const computePercentage = (responses: string[], option: string) => {
+      if (responses?.length === 0) {
+        return 0;
+      }
+      const totalResponses = responses?.length;
+      const optionCount = responses?.filter(response => response === option).length;
+      return Math.floor((optionCount / totalResponses) * 100);
+    }
+
+    const modOptions = poll.options.map((option) => {
+      return { text: option, percentage: computePercentage(poll.responses, option) };
+    });
+
+    const handleViewPoll = (poll: any) => {
+      setSelectedPoll(poll)
+      setIsPollModalOpen(true)
+    }
+
+    const closePollModal = () => {
+      setIsPollModalOpen(false)
+      setSelectedPoll(null)
+    }
 
     return (
       <Card key={poll.id} className="hover:shadow-lg transition-shadow">
@@ -345,13 +359,13 @@ export default function LivePollsPage() {
             </div>
             <div className="flex items-center text-sm font-semibold text-primary">
               <Trophy className="h-4 w-4 mr-1" />
-              <span>{ethers.utils.formatEther(poll.funds || '0')} NERO </span>
+              <span>{ethers.utils.formatEther(poll.targetFund || '0')} NERO </span>
             </div>
           </div>
           <Button
             color="default"
             className="w-full"
-            onClick={() => setIsVoteModalOpen(true)}
+            onClick={() => handleViewPoll(poll)}
           >
             <Eye className="h-4 w-4 mr-2" />
             {poll.status === "closed" ? "View Results" : "Respond to Poll"}
@@ -376,6 +390,11 @@ export default function LivePollsPage() {
             ))}
           </Space>
         </Modal>
+        <VotePollModal
+          featureFlagNew={true} 
+          poll={selectedPoll} isOpen={isPollModalOpen} onClose={closePollModal}
+          fetchPolls={fetchPolls}
+        />
       </Card>
     )
   }
