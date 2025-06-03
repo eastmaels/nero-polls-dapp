@@ -18,7 +18,6 @@ interface PollStepProps {
 
 export default function PollStep2({ formData, updateFormData }: PollStepProps) {
   const [isGenerating, setIsGenerating] = useState(false);
-  console.log('poll step2-1')
 
   const generateOptions = async () => {
     if (formData.useAI) {
@@ -53,7 +52,6 @@ export default function PollStep2({ formData, updateFormData }: PollStepProps) {
   };
 
   useEffect(() => {
-    console.log('poll step2-2 dpollsConfig.api', dpollsConfig.api)
     if (formData.useAI && formData.options.length === 0) {
       generateOptions();
     }

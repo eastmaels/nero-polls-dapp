@@ -50,6 +50,7 @@ export default function CreatePoll() {
 
       if (pollForm.fundingType === 'unfunded') {
         const pollInput = {
+          creator: AAaddress,
           subject: pollForm.subject,
           description: pollForm.description,
           category: pollForm.category,
@@ -58,7 +59,6 @@ export default function CreatePoll() {
           durationDays: parseInt(pollForm.duration || "90"),
           isOpenImmediately: pollForm.openImmediately
         };
-        console.log('pollInput', pollInput);
 
         await execute({
           function: 'createUnfundedPoll',
@@ -72,6 +72,7 @@ export default function CreatePoll() {
         const rewardPerResponse = pollForm.rewardDistribution === "split" ? "0" : pollForm.rewardPerResponse;
         const value = ethers.utils.parseEther(pollForm.targetFund || "0");
         const pollInput = {
+          creator: AAaddress,
           subject: pollForm.subject,
           description: pollForm.description,
           category: pollForm.category,
@@ -90,7 +91,6 @@ export default function CreatePoll() {
           baseContributionAmount: ethers.utils.parseEther("1").toString(), // Default to 1 ETH as base
           maxWeight: "10" // Default max weight of 10
         };
-        console.log('pollInput', pollInput);
 
         await execute({
           function: 'createPoll',
@@ -168,7 +168,6 @@ export default function CreatePoll() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Poll created with data:", formData)
     await handleCreatePoll(formData);
   }
 

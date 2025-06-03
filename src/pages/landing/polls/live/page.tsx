@@ -139,7 +139,6 @@ export default function LivePollsPage() {
 
     return matchesSearch && matchesCategory && matchesStatus
   })
-  console.log('filteredPolls', filteredPolls)
 
   const categories = ["all", ...Array.from(new Set(polls.map((poll) => poll.category)))]
   const statuses = ["all", ...Array.from(new Set(polls.map((poll) => poll.status)))]
@@ -329,6 +328,22 @@ export default function LivePollsPage() {
       setSelectedPoll(null)
     }
 
+    function renderButtonText(poll: any): import("react").ReactNode {
+      let btnTxt = "";
+      switch (poll.status) {
+        case "new":
+          btnTxt = "View Details";
+          break;
+        case "closed":
+          btnTxt = "View Results";
+          break;
+        default:
+          btnTxt = "Respond to Poll"
+          break;
+      }
+      return btnTxt;
+    }
+
     return (
       <Card key={poll.id} className="hover:shadow-lg transition-shadow">
         <CardHeader>
@@ -368,7 +383,7 @@ export default function LivePollsPage() {
             onClick={() => handleViewPoll(poll)}
           >
             <Eye className="h-4 w-4 mr-2" />
-            {poll.status === "closed" ? "View Results" : "Respond to Poll"}
+            {renderButtonText(poll)}
           </Button>
         </CardContent>
         <Modal

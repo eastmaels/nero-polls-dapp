@@ -134,55 +134,6 @@ export default function DashboardContent({ activeTab, setActiveTab }: DashboardC
     }
   };
 
-  const handleCreatePoll = async (pollForm: any) => {
-    if (!isConnected) {
-      alert('Please connect your wallet first');
-      return;
-    }
-
-    setIsLoading(true);
-    setUserOpHash(null);
-    setTxStatus('');
-
-    try {
-      await execute({
-        function: 'createPoll',
-        contractAddress: CONTRACT_ADDRESSES.dpollsContract,
-        abi: POLLS_DAPP_ABI,
-        params: [
-          pollForm.subject,
-          pollForm.description,
-          pollForm.options,
-          ethers.utils.parseEther(pollForm.rewardPerResponse).toString(),
-          parseInt(pollForm.duration),
-          parseInt(pollForm.maxResponses),
-          ethers.utils.parseEther(pollForm.minContribution).toString(),
-          ethers.utils.parseEther(pollForm.targetFund).toString(),
-          ethers.constants.AddressZero, // Use address(0) for native ETH
-        ],
-        value: 0
-      });
-
-      const result = await waitForUserOpResult();
-      setUserOpHash(result.userOpHash);
-      setIsPolling(true);
-
-      if (result.result === true) {
-        setIsPolling(false);
-        fetchPolls();
-      } else if (result.transactionHash) {
-        setTxStatus('Transaction hash: ' + result.transactionHash);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      setTxStatus('An error occurred');
-    } finally {
-      setIsLoading(false);
-      setActiveDashboardTab("created");
-      setActiveTab("active-polls")
-    }
-  };
-
   // Render different content based on active tab
   if (activeTab === "create-poll") {
     //return <CreatePollContent />

@@ -43,7 +43,7 @@ contract PollManager is IPollManager {
         );
 
         PollStructs.PollContent memory content = PollStructs.PollContent({
-            creator: msg.sender,
+            creator: params.creator,
             subject: params.subject,
             description: params.description,
             category: params.category,
@@ -82,7 +82,7 @@ contract PollManager is IPollManager {
         require(params.durationDays > 0, "Invalid duration");
 
         PollStructs.PollContent memory content = PollStructs.PollContent({
-            creator: msg.sender,
+            creator: params.creator,
             subject: params.subject,
             description: params.description,
             category: params.category,

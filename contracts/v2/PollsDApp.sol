@@ -55,6 +55,7 @@ contract PollsDApp is Ownable {
     }
 
     struct LocalCreatePollParams {
+        address creator;
         string subject;
         string description;
         string category;
@@ -93,7 +94,7 @@ contract PollsDApp is Ownable {
         // Create poll
         uint256 pollId = pollManager.createPoll(
             PollStructs.CreatePollParams({
-                creator: msg.sender,
+                creator: params.creator,
                 subject: params.subject,
                 description: params.description,
                 category: params.category,
@@ -116,7 +117,7 @@ contract PollsDApp is Ownable {
             fundingManager.handleImmediateFunding(pollId, msg.value);
         }
 
-        emit PollCreated(pollId, msg.sender, params.subject);
+        emit PollCreated(pollId, params.creator, params.subject);
     }
 
     function submitResponse(uint256 pollId, string memory response) external payable nonReentrant {

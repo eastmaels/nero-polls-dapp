@@ -17,7 +17,9 @@ import { useState } from "react";
 export default function ManagePolls({ AAaddress, handleTabChange, polls, fetchPolls }:
   { AAaddress: string, handleTabChange: (tab: string) => void, polls: PollState[], fetchPolls: () => void }) {
   // Filter polls based on their status
-  const createdPolls = polls.filter(poll => poll.creator === AAaddress)
+  const createdPolls = polls.filter(poll =>  {
+    return poll.creator?.toLocaleLowerCase() === AAaddress.toLocaleLowerCase()
+  });
 
   return (
     <div className="container mx-auto px-4 py-8">

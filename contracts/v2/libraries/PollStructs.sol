@@ -21,6 +21,7 @@ library PollStructs {
     }
 
     struct CreateUnfundedPollParams {
+        address creator;
         string subject;
         string description;
         string category;
