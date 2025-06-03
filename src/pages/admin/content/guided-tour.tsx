@@ -113,6 +113,8 @@ export default function GuidedTour({ isActive, onClose, activeTab, setActiveTab 
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 })
   const tooltipRef = useRef<HTMLDivElement>(null)
 
+  console.log('isActive', isActive)
+
   useEffect(() => {
     if (!isActive) return
 

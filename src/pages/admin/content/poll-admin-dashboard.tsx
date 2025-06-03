@@ -24,15 +24,23 @@ export default function PollAdminDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard")
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true)
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true)
-  const [tourActive, setTourActive] = useState(true)
+  const [tourActive, setTourActive] = useState(() => {
+    // Initialize from localStorage, default to true if not set
+    const savedTourState = localStorage.getItem('poll-admin-tour-completed')
+    console.log('savedTourState', savedTourState)
+    console.log('typeof savedTourState', typeof savedTourState)
 
-  // Toggle sidebars on mobile
-  const toggleLeftSidebar = () => {
-    setLeftSidebarOpen(!leftSidebarOpen)
-  }
+    const isSaved = savedTourState !== 'true';
+    console.log('isSaved', isSaved)
 
-  const toggleRightSidebar = () => {
-    setRightSidebarOpen(!rightSidebarOpen)
+    return isSaved;
+  })
+
+  console.log('tourActive', tourActive)
+
+  const handleTourClose = () => {
+    setTourActive(false)
+    localStorage.setItem('poll-admin-tour-completed', 'true')
   }
 
   return (
@@ -177,7 +185,7 @@ export default function PollAdminDashboard() {
       </footer> */}
       <GuidedTour
         isActive={tourActive}
-        onClose={() => setTourActive(false)}
+        onClose={handleTourClose}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
       />

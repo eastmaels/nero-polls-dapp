@@ -15,7 +15,24 @@ interface LeftSidebarProps {
 
 export default function LeftSidebar({ activeTab, setActiveTab, isMobile }: LeftSidebarProps) {
   const [openPolls, setOpenPolls] = useState(true)
-  const [tourActive, setTourActive] = useState(true)
+  const [tourActive, setTourActive] = useState(() => {
+    // Initialize from localStorage, default to true if not set
+    const savedTourState = localStorage.getItem('poll-admin-tour-completed')
+    console.log('savedTourState', savedTourState)
+    console.log('typeof savedTourState', typeof savedTourState)
+
+    const isSaved = savedTourState !== 'true';
+    console.log('isSaved', isSaved)
+
+    return isSaved;
+  })
+
+  console.log('tourActive', tourActive)
+
+  const handleTourClose = () => {
+    setTourActive(false)
+    localStorage.setItem('poll-admin-tour-completed', 'true')
+  }
 
   return (
     <div className="h-full py-4 flex flex-col">
@@ -143,7 +160,7 @@ export default function LeftSidebar({ activeTab, setActiveTab, isMobile }: LeftS
       )}
       <GuidedTour
         isActive={tourActive}
-        onClose={() => setTourActive(false)}
+        onClose={handleTourClose}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
       />

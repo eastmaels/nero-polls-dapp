@@ -81,8 +81,6 @@ export default function DashboardContent({ activeTab, setActiveTab }: DashboardC
                 }
               });
 
-              console.log('pollDetails', pollDetails)
-              
               // Format the poll data
               return {
                 id: pollId,
@@ -188,7 +186,7 @@ export default function DashboardContent({ activeTab, setActiveTab }: DashboardC
   // Render different content based on active tab
   if (activeTab === "create-poll") {
     //return <CreatePollContent />
-    return <CreatePoll handleCreatePoll={handleCreatePoll} handleTabChange={setActiveTab} />
+    return <CreatePoll />
   } else if (activeTab === "created-polls") {
     return <ManagePolls AAaddress={AAaddress} handleTabChange={setActiveTab} polls={polls} fetchPolls={fetchPolls} activeDashboardTab={activeDashboardTab} />
   } else if (activeTab === "active-polls") {

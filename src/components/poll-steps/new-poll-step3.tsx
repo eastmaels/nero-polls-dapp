@@ -120,7 +120,7 @@ export default function PollStep3({ formData, updateFormData }: PollStepProps) {
 
           {formData.rewardDistribution === "split" ? (
             <div className="space-y-2">
-              <Label htmlFor="target-fund">Target Fund Amount (ETH) *</Label>
+              <Label htmlFor="target-fund">Target Fund Amount (NERO) *</Label>
               <Input
                 id="target-fund"
                 type="number"
@@ -134,7 +134,7 @@ export default function PollStep3({ formData, updateFormData }: PollStepProps) {
             </div>
           ) : (
             <div className="space-y-2">
-              <Label htmlFor="fixed-reward">Fixed Reward per Responder (ETH) *</Label>
+              <Label htmlFor="fixed-reward">Fixed Reward per Responder (NERO) *</Label>
               <Input
                 id="fixed-reward"
                 type="number"
