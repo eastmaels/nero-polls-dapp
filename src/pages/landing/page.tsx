@@ -394,7 +394,7 @@ export default function LandingPage() {
                           parseFloat(ethers.utils.formatEther(poll.targetFund || '0'))
                           :
                           poll.prize
-                        }
+                        } NERO
                       </div>
                     </div>
                     <Button className="w-full" variant="outline" onClick={() => handleViewPoll(poll)}>

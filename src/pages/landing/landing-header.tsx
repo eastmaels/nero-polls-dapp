@@ -27,9 +27,9 @@ export default function LandingPageHeader() {
               <Link to="/polls/new" className="text-muted-foreground hover:text-foreground">
                 Create Poll
               </Link>
-              {/* <Link to="/admin" className="text-muted-foreground hover:text-foreground">
+              <Link to="/admin" className="text-muted-foreground hover:text-foreground">
                 Admin
-              </Link> */}
+              </Link>
             </nav>
 
             {/* Mobile Menu Button */}

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Link } from 'react-router-dom'
-import { Home, PlusCircle, Settings, Gamepad2, Trophy, MenuIcon, User, Bell, ChevronRight, Play } from "lucide-react"
+import { Home, PlusCircle, Settings, Gamepad2, Trophy, MenuIcon, User, Bell, ChevronRight, Play, BadgeHelp } from "lucide-react"
 import { Button } from "@/components/ui_v3/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui_v3/avatar"
 import {
@@ -65,7 +65,7 @@ export default function PollAdminDashboard() {
               <span className="sr-only">Notifications</span>
             </Button>
             <Button variant="ghost" size="icon" onClick={() => setTourActive(true)}>
-              <Play className="h-5 w-5" />
+              <BadgeHelp className="h-5 w-5" />
               <span className="sr-only">Start Tour</span>
             </Button>
 
@@ -139,7 +139,7 @@ export default function PollAdminDashboard() {
       </div>
 
       {/* Fixed floating footer */}
-      <footer className="fixed bottom-4 left-1/2 transform -translate-x-1/2 flex items-center justify-center gap-1 p-1 bg-background border rounded-full shadow-lg z-50">
+      {/* <footer className="fixed bottom-4 left-1/2 transform -translate-x-1/2 flex items-center justify-center gap-1 p-1 bg-background border rounded-full shadow-lg z-50 bg-white">
         <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setActiveTab("dashboard")}>
           <Home className={cn("h-5 w-5", activeTab === "dashboard" ? "text-primary" : "text-muted-foreground")} />
           <span className="sr-only">Home</span>
@@ -174,7 +174,7 @@ export default function PollAdminDashboard() {
           <Trophy className={cn("h-5 w-5", activeTab === "leaderboard" ? "text-primary" : "text-muted-foreground")} />
           <span className="sr-only">Leaderboard</span>
         </Button>
-      </footer>
+      </footer> */}
       <GuidedTour
         isActive={tourActive}
         onClose={() => setTourActive(false)}

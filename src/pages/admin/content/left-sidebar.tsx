@@ -5,6 +5,7 @@ import { Home, BarChart3, PieChart, PlusCircle, Settings, Users, ChevronDown } f
 import { Button } from "@/components/ui_v3/button"
 import { cn } from "@/lib/utils"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui_v3/collapsible"
+import GuidedTour from "@/pages/admin/content/guided-tour"
 
 interface LeftSidebarProps {
   activeTab: string
@@ -14,6 +15,7 @@ interface LeftSidebarProps {
 
 export default function LeftSidebar({ activeTab, setActiveTab, isMobile }: LeftSidebarProps) {
   const [openPolls, setOpenPolls] = useState(true)
+  const [tourActive, setTourActive] = useState(true)
 
   return (
     <div className="h-full py-4 flex flex-col">
@@ -83,7 +85,7 @@ export default function LeftSidebar({ activeTab, setActiveTab, isMobile }: LeftS
             </CollapsibleContent>
           </Collapsible>
 
-          <Button
+          {/* <Button
             variant={activeTab === "analytics" ? "secondary" : "ghost"}
             className="w-full justify-start"
             onClick={() => setActiveTab("analytics")}
@@ -91,7 +93,7 @@ export default function LeftSidebar({ activeTab, setActiveTab, isMobile }: LeftS
           >
             <PieChart className="mr-2 h-4 w-4" />
             Analytics
-          </Button>
+          </Button> */}
 
           <Button
             variant={activeTab === "create-poll" ? "secondary" : "ghost"}
@@ -103,7 +105,7 @@ export default function LeftSidebar({ activeTab, setActiveTab, isMobile }: LeftS
             Create Poll
           </Button>
 
-          <Button
+          {/* <Button
             variant={activeTab === "users" ? "secondary" : "ghost"}
             className="w-full justify-start"
             onClick={() => setActiveTab("users")}
@@ -119,7 +121,7 @@ export default function LeftSidebar({ activeTab, setActiveTab, isMobile }: LeftS
           >
             <Settings className="mr-2 h-4 w-4" />
             Settings
-          </Button>
+          </Button> */}
         </div>
       </div>
 
@@ -128,14 +130,23 @@ export default function LeftSidebar({ activeTab, setActiveTab, isMobile }: LeftS
           <div className="p-4 rounded-lg bg-muted">
             <h3 className="text-sm font-medium">Need help?</h3>
             <p className="text-xs text-muted-foreground mt-1">
-              Check our documentation or contact support for assistance.
+              Get a guided tour.
             </p>
-            <Button className="w-full mt-3" size="sm">
-              View Documentation
+            <Button
+              className="w-full mt-3 text-white" size="sm"
+              onClick={() => setTourActive(true)}
+            >
+              Site Tour
             </Button>
           </div>
         </div>
       )}
+      <GuidedTour
+        isActive={tourActive}
+        onClose={() => setTourActive(false)}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+      />
     </div>
   )
 }
