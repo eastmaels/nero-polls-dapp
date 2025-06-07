@@ -16,9 +16,10 @@ import { Separator } from "@/components/ui_v3/separator";
 import { PollState } from "@/types/poll";
 import { getCompressedAddress } from "@/utils/addressUtil";
 import { calculateTimeLeft } from "@/utils/timeUtils";
-import { Modal, Tag, Tooltip } from "antd";
+import { getTagColor } from "@/utils/tagColors";
+import { Modal, Tag, Tooltip, Form, InputNumber, Select } from "antd";
 import { ethers } from "ethers";
-import { CheckCircle, Clock, Share2, Trophy, Users, Vote } from "lucide-react";
+import { CheckCircle, Clock, Share2, Trophy, Users, Vote, CircleDollarSign } from "lucide-react";
 import Image from "next/image";
 import { WalletConnector } from '@/components/wallet/wallet-connector';
 
@@ -40,7 +41,9 @@ interface PollModalProps {
 
 export function VotePollModal({ featureFlagNew, poll, isOpen, onClose, fetchPolls }: PollModalProps) {
   const [selectedOption, setSelectedOption] = useState<string>("")
-  //const [hasVoted, setHasVoted] = useState(poll?.userHasVoted || false)
+  const [isFundingModalOpen, setIsFundingModalOpen] = useState(false);
+  const [form] = Form.useForm();
+  const [isLoading, setIsLoading] = useState(false);
 
   const { isConnected, AAaddress } = useSignature();
   const { execute, waitForUserOpResult } = useSendUserOp();
@@ -59,6 +62,14 @@ export function VotePollModal({ featureFlagNew, poll, isOpen, onClose, fetchPoll
       setIsWalletPanel(false)
     }
   }, [isWalletConnected, setIsWalletPanel])
+
+  // Set initial form value when modal opens
+  useEffect(() => {
+    if (isFundingModalOpen && poll?.targetFund) {
+      const initialValue = ethers.utils.formatEther(poll.targetFund);
+      form.setFieldsValue({ contribution: initialValue });
+    }
+  }, [isFundingModalOpen, poll?.targetFund, form]);
 
   if (!poll) return null
 
@@ -163,6 +174,55 @@ export function VotePollModal({ featureFlagNew, poll, isOpen, onClose, fetchPoll
     }
   }
 
+  const handleFundPollLocal = async () => {
+    if (!isConnected) {
+      alert('Please connect your wallet first');
+      return;
+    }
+
+    setIsLoading(true);
+    setUserOpHash(null);
+    setTxStatus('');
+
+    const amount = form.getFieldValue("contribution");
+    const ethAmount = ethers.utils.parseEther(amount);
+
+    try {
+      await execute({
+        function: 'fundPoll',
+        contractAddress: CONTRACT_ADDRESSES.dpollsContract,
+        abi: POLLS_DAPP_ABI,
+        params: [
+          poll.id,
+        ],
+        value: ethAmount,
+      });
+
+      const result = await waitForUserOpResult();
+      setUserOpHash(result.userOpHash);
+      setIsPolling(true);
+
+      if (result.result === true) {
+        setIsPolling(false);
+        fetchPolls();
+      } else if (result.transactionHash) {
+        setTxStatus('Transaction hash: ' + result.transactionHash);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setTxStatus('An error occurred');
+    } finally {
+      setIsLoading(false);
+      setIsFundingModalOpen(false);
+    }
+  };
+
+  const selectAfter = (
+    <Select defaultValue="NERO" style={{ width: "auto" }}>
+      <Select.Option value="NERO">NERO</Select.Option>
+    </Select>
+  );
+
   return (
     <Modal
       title={poll.subject}
@@ -176,13 +236,17 @@ export function VotePollModal({ featureFlagNew, poll, isOpen, onClose, fetchPoll
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <Tag
-              color={
-                poll.status === "new" ? "#108ee9" : poll.status === "for-claiming" ? "#f50" : "#87d068"
-              }
+              color={getTagColor('category', poll.category)}
             >
               {poll.category || "uncategorized"}
             </Tag>
-            {poll.status && <Badge className="text-white" variant={getStatusColor(poll.status)}>{poll.status}</Badge>}
+            {poll.status && (
+              <Tag
+                color={getTagColor('status', poll.status)}
+              >
+                {poll.status}
+              </Tag>
+            )}
           </div>
           <p className="text-muted-foreground">{poll.description}</p>
         </div>
@@ -217,14 +281,21 @@ export function VotePollModal({ featureFlagNew, poll, isOpen, onClose, fetchPoll
           <div className="flex items-center space-x-2 p-2 bg-muted/50 rounded-lg min-w-[120px]">
             <Trophy className="h-4 w-4 text-primary" />
             <div>
-              <p className="text-xs text-muted-foreground">Prize Pool</p>
-              <p className="font-semibold text-sm">
-                {featureFlagNew ?
-                  parseFloat(ethers.utils.formatEther(poll.targetFund || '0'))
-                  :
-                  poll.prize
-                }
-              </p>
+              {poll.status === "for-funding" ?
+                <>
+                  <p className="text-xs text-muted-foreground">Target Fund</p>
+                  <p className="font-semibold text-sm">
+                    {parseFloat(ethers.utils.formatEther(poll.targetFund || '0'))}
+                  </p>
+                </>
+              :
+                <>
+                  <p className="text-xs text-muted-foreground">Prize Pool</p>
+                  <p className="font-semibold text-sm">
+                    {parseFloat(ethers.utils.formatEther(poll.funds || '0'))}
+                  </p>
+                </>
+              }
             </div>
           </div>
           <div className="flex items-center space-x-2 p-2 bg-muted/50 rounded-lg min-w-[120px]">
@@ -377,7 +448,71 @@ export function VotePollModal({ featureFlagNew, poll, isOpen, onClose, fetchPoll
             </div>
           </div>
         </div>
+
+        {poll.status === "for-funding" && (
+          <div className="flex justify-end">
+            <Button
+              onClick={() => setIsFundingModalOpen(true)}
+              className="text-white"
+            >
+              <CircleDollarSign className="h-4 w-4 mr-2" />
+              Fund Poll
+            </Button>
+          </div>
+        )}
       </div>
+
+      {/* Funding Modal */}
+      <Modal
+        title={`Fund poll: ${poll.subject}`}
+        open={isFundingModalOpen}
+        maskClosable={false}
+        onCancel={() => setIsFundingModalOpen(false)}
+        footer={[
+          <Button key="submit" className="text-white" disabled={isLoading}
+            onClick={async () => {
+              await handleFundPollLocal();
+              setIsFundingModalOpen(false);
+            }}>
+            {isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                Processing...
+              </>
+            ) : (
+              'Yes'
+            )}
+          </Button>,
+          <Button key="back" variant="outline" disabled={isLoading} onClick={() => {
+            setIsFundingModalOpen(false);
+          }}>
+            No
+          </Button>,
+        ]}
+      >
+        <Form
+          layout={"horizontal"}
+          form={form}
+          name="basicInfo"
+          style={{ maxWidth: 600, margin: '0 auto' }}
+        >
+          <Form.Item
+            label="Fund"
+            name="contribution"
+            rules={[{ required: true, message: 'Please enter amount to contribute' }]}
+            style={{ textAlign: 'center' }}
+          >
+            <InputNumber
+              placeholder="Amount in NERO"
+              min="0.001"
+              step="0.001"
+              addonAfter={selectAfter}
+              stringMode
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </Modal>
   )
 }

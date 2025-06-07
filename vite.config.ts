@@ -40,6 +40,10 @@ export default defineConfig(({ mode }) => {
             entryFileNames: 'bundle.js',
           },
         },
+        minify: true,
+        sourcemap: false,
+        chunkSizeWarningLimit: 1000,
+        assetsInlineLimit: 4096,
       },
     }
   }
@@ -47,6 +51,18 @@ export default defineConfig(({ mode }) => {
   // ライブラリビルド用の設定（デフォルト）
   return {
     ...commonConfig,
+    server: {
+      port: 5173,
+      strictPort: true,
+      host: true,
+      open: true,
+      historyApiFallback: true,
+      middlewareMode: false,
+      fs: {
+        strict: false,
+        allow: ['..']
+      }
+    },
     build: {
       outDir: 'dist/app',
       minify: false,

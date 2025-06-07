@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui_v3/textarea";
 import { PollState } from "@/types/poll";
 import { Calendar, Sparkles } from "lucide-react";
 import dayjs from 'dayjs';
+import { getTagColor } from "@/utils/tagColors";
 
 const { Option } = Select;
 
@@ -59,15 +60,15 @@ export default function PollStep1({ formData, updateFormData }: PollStepProps) {
               style={{ width: "100%" }}
               value={formData.category}
             >
-              <Option value="art">Art</Option>
-              <Option value="design">Design</Option>
-              <Option value="tech">Technology</Option>
-              <Option value="defi">DeFi</Option>
-              <Option value="lifestyle">Lifestyle</Option>
-              <Option value="environment">Environment</Option>
-              <Option value="web3">Web3</Option>
-              <Option value="food">Food</Option>
-              <Option value="other">Other</Option>
+              <Option value="art" style={{ color: getTagColor('category', 'art') }}>Art</Option>
+              <Option value="design" style={{ color: getTagColor('category', 'design') }}>Design</Option>
+              <Option value="tech" style={{ color: getTagColor('category', 'tech') }}>Technology</Option>
+              <Option value="defi" style={{ color: getTagColor('category', 'defi') }}>DeFi</Option>
+              <Option value="lifestyle" style={{ color: getTagColor('category', 'lifestyle') }}>Lifestyle</Option>
+              <Option value="environment" style={{ color: getTagColor('category', 'environment') }}>Environment</Option>
+              <Option value="web3" style={{ color: getTagColor('category', 'web3') }}>Web3</Option>
+              <Option value="food" style={{ color: getTagColor('category', 'food') }}>Food</Option>
+              <Option value="other" style={{ color: getTagColor('category', 'other') }}>Other</Option>
             </Select>
         </div>
 

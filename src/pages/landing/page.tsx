@@ -18,6 +18,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import LandingPageHeader from "@/pages/landing/landing-header";
 import { calculateTimeLeft } from "@/utils";
 import { getRandomBoolean } from "@/utils/booleanUtils";
+import { getTagColor } from "@/utils/tagColors";
 import { Tag } from "antd";
 import { ArrowRight, Clock, Coins, Eye, Shield, Trophy, Users } from "lucide-react";
 
@@ -259,7 +260,7 @@ export default function LandingPage() {
                 options: pollDetails.options,
                 rewardPerResponse: pollDetails.rewardPerResponse,
                 maxResponses: pollDetails.maxResponses.toString(),
-                endTime: new Date(Number(pollDetails.endTime) * 1000),
+                endDate: new Date(Number(pollDetails.endTime) * 1000),
                 isOpen: pollDetails.isOpen,
                 isFeatured: true || getRandomBoolean(),
                 totalResponses: pollDetails.totalResponses.toString(),
@@ -277,7 +278,9 @@ export default function LandingPage() {
         );
 
         // Filter out any null values from failed fetches
-        const validPolls = fetchedPolls.filter(poll => poll !== null);
+        const validPolls = fetchedPolls.filter(poll => poll !== null)
+          .filter(poll => poll.status === "open")
+          .filter(poll => calculateTimeLeft(poll.endDate) !== "Ended");
         
         if (validPolls.length > 0) {
           setPolls(validPolls);
@@ -349,18 +352,23 @@ export default function LandingPage() {
                 <Card key={poll.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex justify-between items-start mb-2">
-                      <Tag
-                        color={
-                          poll.status === "new" ? "#108ee9" : poll.status === "for-claiming" ? "#f50" : "#87d068"
-                        }
-                      >
-                        {poll.category}
-                      </Tag>
+                      <div className="flex gap-2">
+                        <Tag
+                          color={getTagColor('category', poll.category)}
+                        >
+                          {poll.category}
+                        </Tag>
+                        <Tag
+                          color={getTagColor('status', poll.status)}
+                        >
+                          {poll.status}
+                        </Tag>
+                      </div>
                       <div className="flex items-center text-sm text-muted-foreground">
                         <Clock className="h-3 w-3 mr-1" />
                         <span>
                           {featureFlagNew ? 
-                            poll.endTime && calculateTimeLeft(poll.endTime)
+                            poll.endDate && calculateTimeLeft(poll.endDate)
                             :
                             poll.timeLeft
                           }
